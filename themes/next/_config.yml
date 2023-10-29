@@ -98,9 +98,9 @@ creative_commons:
 # ---------------------------------------------------------------
 
 # Schemes
-scheme: Muse
+#scheme: Muse
 #scheme: Mist
-#scheme: Pisces
+scheme: Pisces
 #scheme: Gemini
 
 # Dark Mode
@@ -155,7 +155,7 @@ sidebar:
   display: post
 
   # Sidebar padding in pixels.
-  padding: 18
+  padding: 20
   # Sidebar offset from top menubar in pixels (only for Pisces | Gemini).
   offset: 12
   # Enable sidebar on narrow view (only for Muse | Mist).
@@ -178,7 +178,7 @@ site_state: true
 # Key is the link label showing to end users.
 # Value before `||` delimiter is the target permalink, value after `||` delimiter is the name of Font Awesome icon.
 social:
-  #GitHub: https://github.com/yourname || github
+  GitHub: https://github.com/weimake || github
   #E-Mail: mailto:yourname@gmail.com || envelope
   #Weibo: https://weibo.com/yourname || weibo
   #Google: https://plus.google.com/yourname || google
