@@ -11,7 +11,7 @@ urlname: 61d8c7193f1b88013604e2667a0ec9df
 
 ## <font color="#FF0000"><strong>第一步：打开grub配置文件</strong></font>
 ```
-sudo vi /etc/default/grub
+$ sudo vi /etc/default/grub
 ```
 修改前文件：
 ![](/images/61d8c7193f1b88013604e2667a0ec9df/1.png#pic_left)
@@ -21,7 +21,7 @@ sudo vi /etc/default/grub
 
 ## <font color="#FF0000"><strong>第二步：更新grub</strong></font>
 ```
-sudo update-grub
+$ sudo update-grub
 ```
 
 ![](/images/61d8c7193f1b88013604e2667a0ec9df/3.png#pic_left)
@@ -29,14 +29,14 @@ sudo update-grub
 
 ## <font color="#FF0000"><strong>第三步：更新系统服务管理器配置</strong></font>
 ```
-sudo systemctl set-default multi-user.taget
+$ sudo systemctl set-default multi-user.taget
 ```
 
 ![](/images/61d8c7193f1b88013604e2667a0ec9df/4.png#pic_left)
 
 ## <font color="#FF0000"><strong>第四步：重启系统</strong></font>
 ```
-sudo reboot
+$ sudo reboot
 ```
   
 <font margin-top:150px>参考文档：</font>

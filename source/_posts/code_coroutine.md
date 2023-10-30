@@ -27,7 +27,7 @@ urlname: 0af9c6f8e8d678cc1ae542e0eee1e9d2
 
 ## <font color="#FF0000"><strong>ucontext函数族说明</strong></font>
 
-```
+``` c
 #include <ucontext.h>
   
 int  getcontext(ucontext_t *ucp);
@@ -36,22 +36,22 @@ void makecontext(ucontext_t *ucp, void (*func)(), int argc, ...);
 int  swapcontext(ucontext_t *oucp, ucontext_t *ucp);
 ```
 
-```
+``` c
 int  getcontext(ucontext_t *ucp);
 ```
 该函数获取当前运行时上下文，将其保存到ucp中。
 
-```
+``` c
 int  setcontext(const ucontext_t *ucp);
 ```
 设置当前运行时上下文为ucp。
 
-```
+``` c
 void makecontext(ucontext_t *ucp, void (*func)(), int argc, ...);
 ```
 该函数的作用是修改一个用getcontext()获取的ucontext_t实例，也就是说ucp是在调用makecontext之前由getcontext初始化过的值。如果从字面上理解，觉得makecontext可以新建一个ucontext_t，但实际它仅做修改，所以它叫updatecontext显然更加合适。makecontext用参数func指针和argc，以及后续的可变参数，来修改ucp。当这个ucp被setcontext或者swapcontext之后，执行流跳转到func指向的新函数中去。
 
-```
+``` c
 int  swapcontext(ucontext_t *oucp, ucontext_t *ucp);
 ```
 该函数将当前的运行时上下文保存到oucp中，然后切换到ucp所指向的上下文。
@@ -59,7 +59,7 @@ int  swapcontext(ucontext_t *oucp, ucontext_t *ucp);
 <br/>
 
 这4个函数都用到了ucontext_t结构体，它用来保存运行时上下文，包括运行时各个寄存器的值、运行时栈、信号等等数据。它大致的结构为：
-```
+``` c
 typedef struct ucontext 
 {
     struct ucontext *uc_link;
@@ -100,7 +100,7 @@ typedef struct ucontext
 如果子协程的函数体运行完毕退出，再次切回主协程。恢复主协程的硬件上下文和运行时栈，执行调度子程序，或者在所有子程序都结束的情况下，主协程也退出。
 
 参照上述描述，我们看下云风的示例程序：
-```
+``` c
 #include "coroutine.h"
 #include <stdio.h>
  
@@ -153,7 +153,7 @@ int main()
 ```
 
 ### struct schedule协程调度器
-```
+``` c
 #define STACK_SIZE        (1024*1024)   // 默认的协程运行时栈大小
  
 struct coroutine;
@@ -180,7 +180,7 @@ struct schedule
 * 被恢复的地方是在coroutine_resume函数中，将状态从COROUTINE_SUSPEND转为COROUTINE_RUNNING时。他将栈内容从协程结构体中的栈缓存，拷贝到S->stack中，我们知道S->stack被所有子协程用作运行时栈。参考源代码corontine.c中第171行。
 
 ### struct coroutine协程结构体
-```
+``` c
 // 协程结构体
 struct coroutine 
 {
@@ -201,7 +201,7 @@ struct coroutine
 * 被恢复的地方都是在coroutine_resume函数中，参考源代码coroutine.c中的第167、174行。
 
 ### 协程的恢复coroutine_resume
-```
+``` c
 void coroutine_resume(struct schedule * S, int id) 
 {
     assert(S->running == -1);
@@ -242,7 +242,7 @@ void coroutine_resume(struct schedule * S, int id)
 ```
 
 ### 协程的切出coroutine_yield
-```
+``` c
 static void _save_stack(struct coroutine *C, char *top) 
 {
     char dummy = 0;
