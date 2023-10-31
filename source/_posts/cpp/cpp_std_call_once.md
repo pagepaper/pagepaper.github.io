@@ -3,8 +3,8 @@ title: c++11特性之std:call_once
 urlname: 1a927e37caa6612edd2c10e9c4e2f8ce
 categories : 
   - [MordenCPP]
-date: 2015-03-26 22:18:00
-updated: 2015-03-26 22:18:00
+date: 2018-03-26 22:18:00
+updated: 2018-03-26 22:18:00
 ---
 ## 使用背景
 在多线程编程环境中，我们有时希望某个操作只做一次，比如获取一些系统变量；或者某个函数只被调用一次。我们就可以采用系统提供的std::call_once来保证。

@@ -3,8 +3,8 @@ title: c++语法之虚
 urlname: e184ac74b250b5e84824e9e520fb5e8f
 categories : 
   - [编程开发]
-date: 2009-07-13 16:45:00
-updated: 2009-07-13 16:45:00
+date: 2007-07-13 16:45:00
+updated: 2007-07-13 16:45:00
 ---
 导语：C++中用“虚”的来命名的概念，涉及:
 * <font color="#FF0000">虚函数</font>

@@ -1,7 +1,7 @@
 ---
 title: 让configure和cmake编译时支持调试选项
-date: 2018-03-04 17:02:58
-updated: 2018-03-04 17:02:58
+date: 2008-03-04 17:02:58
+updated: 2008-03-04 17:02:58
 categories : 
   - [编程开发]
 tags:
