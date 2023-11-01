@@ -69,7 +69,7 @@ int main()
 ```
 
 ## 使用explicit关键字注意事项
-<font color="#FF0000"><strong>explicit关键字只能用于类内部的构造函数声明上，在类的定义体外部所做的定义上不在重复它。</strong></font>也就是下面两种方式都是错误的：
+<font color="#FF0000">**explicit关键字只能用于类内部的构造函数声明上，在类的定义体外部所做的定义上不在重复它。**</font>也就是下面两种方式都是错误的：
 ``` c++
 class TDemo
 {
