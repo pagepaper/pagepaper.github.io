@@ -118,9 +118,9 @@ darkmode: false
 # External url should start with http:// or https://
 menu:
   home: / || home
-  #about: /about/ || user
-  #tags: /tags/ || tags
-  #categories: /categories/ || th
+  about: /about/ || user
+  tags: /tags/ || tags
+  categories: /categories/ || th
   archives: /archives/ || archive
   #schedule: /schedule/ || calendar
   #sitemap: /sitemap.xml || sitemap
@@ -164,9 +164,9 @@ sidebar:
 # Sidebar Avatar
 avatar:
   # Replace the default image and set the url here.
-  url: #/images/avatar.gif
+  url: /assets/logo/header.jpeg
   # If true, the avatar will be dispalyed in circle.
-  rounded: false
+  rounded: true
   # If true, the avatar will be rotated with the cursor.
   rotated: false
 
@@ -179,9 +179,9 @@ site_state: true
 # Value before `||` delimiter is the target permalink, value after `||` delimiter is the name of Font Awesome icon.
 social:
   GitHub: https://github.com/weimake || github
-  #E-Mail: mailto:yourname@gmail.com || envelope
-  #Weibo: https://weibo.com/yourname || weibo
-  #Google: https://plus.google.com/yourname || google
+  E-Mail: mailto:yourname@gmail.com || envelope
+  Weibo: https://weibo.com/yourname || weibo
+  Google: https://plus.google.com/yourname || google
   #Twitter: https://twitter.com/yourname || twitter
   #FB Page: https://www.facebook.com/yourname || facebook
   #StackOverflow: https://stackoverflow.com/yourname || stack-overflow
@@ -391,7 +391,7 @@ bookmark:
 # `Follow me on GitHub` banner in the top-right corner.
 github_banner:
   enable: false
-  permalink: https://github.com/yourname
+  permalink: https://github.com/weimake
   title: Follow me on GitHub
 
 
