@@ -18,6 +18,8 @@ class function<R(Args...)>; // R表示返回值，Args表示函数参数
 类模板std::function是通用多态函数封装器。std::function的实例能存储、复制及调用任何可调用目标，包括函数、lambda表达式、bind表达式或其他函数对象，还有指向成员函数指针和指向数据成员指针。
 存储的可调用对象被称为std::function的目标。若 std::function不含目标，则称它为空。调用空std::function的目标导致抛出std::bad_function_call异常。
 
+<!--more-->
+
 ## std::bind绑定器
 std::bind用来将可调用对象与其参数一起进行绑定，绑定后的结果可以使用std::function进行保存。在绑定参数时，可以直接绑定函数的全部参数，也可以绑定部分参数。在绑定部分参数时，通过使用std::placeholders，来决定该位置上的参数为调用发生时的第几个参数。
 比如：

@@ -15,6 +15,8 @@ template< class Callable, class... Args >
 void call_once( std::once_flag& flag, Callable&& f, Args&&... args );
 ```
 
+<!--more-->
+
 ## 用法示例
 ``` c++
 // 将文件保存为 call.cpp
