@@ -2,7 +2,8 @@
 title: c++11特性之函数对象（仿函数）
 urlname: a226f61f7c5ea55f722ba139f6528cb2
 categories : 
-  - [MordenCPP]
+  - [c++]
+tags: [c++,c++11]
 date: 2018-03-12 14:39:00
 updated: 2018-03-12 14:39:00
 ---

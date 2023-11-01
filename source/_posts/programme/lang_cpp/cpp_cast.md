@@ -3,6 +3,7 @@ title: c++标准类型转换
 urlname: fb7cd73e06d1c676855e174abb24c2f2
 categories : 
   - [编程开发]
+tags: [c++]
 date: 2007-07-18 15:45:00
 updated: 2007-07-18 15:45:00
 ---

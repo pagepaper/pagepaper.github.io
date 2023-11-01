@@ -4,7 +4,7 @@ date: 2023-10-29 17:43:34
 updated: 2023-10-29 17:43:34
 categories : 
   - [Debian]
-tags:
+tags: [Debian]
 urlname: 61d8c7193f1b88013604e2667a0ec9df
 ---
 
