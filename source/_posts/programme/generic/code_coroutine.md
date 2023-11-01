@@ -16,6 +16,8 @@ urlname: 0af9c6f8e8d678cc1ae542e0eee1e9d2
 
 目前网上有很多协程的实现例子，本文主要分析云风的协程库，来探究协程的实现原理。大家也可以直接看协程库的[注释版](https://github.com/annocode/coroutine)。
 
+<!--more-->
+
 ## 协程库的实现方式
 总体来说，目前有如下几种方式来实现协程库。
 第一种：利用ucontext函数族来切换运行时上下文。比如[云风](https://blog.codingnow.com/2012/07/c_coroutine.html)的[协程库](https://github.com/cloudwu/coroutine/)。

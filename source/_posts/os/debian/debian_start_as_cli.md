@@ -10,6 +10,8 @@ urlname: 61d8c7193f1b88013604e2667a0ec9df
 
 使用虚拟机安装Debian，图形界面太耗资源，也用得比较少，所以还是以命令行界面启动比较好。如下是Debian12.10的设置方式。
 
+<!--more-->
+
 ## 第一步：打开grub配置文件
 ```
 $ sudo vi /etc/default/grub
