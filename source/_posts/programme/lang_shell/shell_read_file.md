@@ -3,6 +3,8 @@ title: shell文件读取
 urlname: 5884f704c266996e0c594a2c54226762
 categories : 
   - [编程开发]
+  - [Shell]
+tags: [Shell]
 date: 2007-04-22 15:01:01
 updated: 2007-04-22 15:01:01
 ---

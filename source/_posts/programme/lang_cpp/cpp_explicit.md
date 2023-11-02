@@ -1,8 +1,9 @@
 ---
-title: c++语法之explicit
+title: C++语法之explicit
 urlname: d841027d99af00846e5f621b77f1162b
 categories : 
-  - [编程开发]
+  - [C++]
+tags: [C++]
 date: 2007-07-16 16:45:00
 updated: 2007-07-16 16:45:00
 ---

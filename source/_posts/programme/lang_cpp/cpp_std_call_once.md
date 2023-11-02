@@ -1,8 +1,9 @@
 ---
-title: c++11特性之std:call_once
+title: C++11特性之std:call_once
 urlname: 1a927e37caa6612edd2c10e9c4e2f8ce
 categories : 
-  - [MordenCPP]
+  - [C++]
+tags: [C++,C++11]
 date: 2018-03-26 22:18:00
 updated: 2018-03-26 22:18:00
 ---

@@ -1,8 +1,9 @@
 ---
-title: c++类继承的成员可见性
+title: C++类继承的成员可见性
 urlname: 601f820f20d24a0ca9a8256c6dbd7fdf
 categories : 
-  - [编程开发]
+  - [C++]
+tags: [C++]
 date: 2007-08-16 10:45:00
 updated: 2007-08-16 10:45:00
 ---

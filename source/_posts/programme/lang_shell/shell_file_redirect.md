@@ -3,6 +3,8 @@ title: shell文件重定向
 urlname: 5d1e3638f76ab779f19b753cc83ed58c
 categories : 
   - [编程开发]
+  - [Shell]
+tags: [Shell]
 date: 2007-04-18 15:01:01
 updated: 2007-04-18 15:01:01
 ---

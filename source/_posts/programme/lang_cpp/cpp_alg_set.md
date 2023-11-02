@@ -2,7 +2,8 @@
 title: STL之交集、并集、差集
 urlname: 83d668164ccdb07908cc1146d8c6050d
 categories : 
-  - [编程开发]
+  - [C++]
+tags: [C++,STL]
 date: 2007-07-25 17:45:00
 updated: 2007-07-25 17:45:00
 ---

@@ -3,8 +3,8 @@ title: 找回Svn和Git不见的文件图标
 date: 2012-03-09 13:07:58
 updated: 2012-03-09 13:07:58
 categories : 
-  - [工具使用]
-tags:
+  - [软件使用]
+tags: [Git,SVN]
 urlname: 3aa7c02a866b00f888e1523895b6634e
 ---
 安装云盘软件之后，导致原来Svn和Git的文件图标都不显示了。按照如下的方法找回图标。
