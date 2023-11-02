@@ -4,7 +4,7 @@ date: 2008-09-14 09:12:58
 updated: 2008-09-14 09:12:58
 categories : 
   - [编程开发]
-tags:
+tags: [动态链接库]
 urlname: d35b2923c9174ea2f2275ceef6feb78f
 ---
 ## 背景
