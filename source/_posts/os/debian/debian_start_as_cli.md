@@ -32,7 +32,7 @@ $ sudo update-grub
 
 ## 第三步：更新系统服务管理器配置
 ```
-$ sudo systemctl set-default multi-user.taget
+$ sudo systemctl set-default multi-user.target
 ```
 
 ![](/images/61d8c7193f1b88013604e2667a0ec9df/4.png#pic_left)
