@@ -1,5 +1,5 @@
 ---
-title: about
+title: 凌寒独自开
 date: 2023-11-01 23:33:23
 ---
 <img src="/assets/logo/about.jpg" style="margin-left: auto">
