@@ -16,6 +16,8 @@ urlname: 998488cc6ef362e4e5d93fc11969a197
 
 那全静态链接如何优雅的实现呢？gcc为我们提供了(-static)、(-Wl,-Bstatic)、(-Wl,-Bdynamic)，这么几个选项。
 
+<!--more-->
+
 <strong>第一种用法：使用-static选项，将全部动态库都用静态库替换。</strong>
 这里有个基于boost库的程序，我们使用普通动态链接的方式编译出来，看看可执行程序的依赖关系。
 ![](/images/998488cc6ef362e4e5d93fc11969a197/1.png)由上图可见，可执行程序依赖于libboost_thread.so.1.72.0、libpthread.so.0、libstdc++.so.6、libc.so.6等等动态库。我们再用-static编译这个程序，再看看可执行程序的依赖关系。

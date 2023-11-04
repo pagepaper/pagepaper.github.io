@@ -25,6 +25,8 @@ struct tm
     int tm_isdst;  // 日光节约时间的旗标。
 };
 ```
+<!--more-->
+
 <br />
 ``` c
 #include <time.h>

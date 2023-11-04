@@ -8,7 +8,7 @@ tags:
 urlname: fffb60d4cfb96748b3e07d9013dab01d
 ---
 ## 背景
-当前的工作与SVN有关，今天使用SVN库编写了一个小程序，编译代码时发现编译器告警：“warning: 'svn_client_ls2' is deprecated (declared at”。
+当前的工作与SVN有关，今天使用SVN库编写了一个小程序，编译代码时发现编译器告警："warning: 'svn_client_ls2' is deprecated (declared at /home/svn/apps/svn/include/subversion-1/svn_client.h:4942)"。
 ``` bash
 svn@linux-rwdx:~/objs/motadou> make
 g++ webdav.cpp -o webdav -I/home/svn/apps/svn/include/subversion-1 -I/home/svn/apps/neon/include/neon -I/home/svn/apps/apr-util/include/apr-1 -I/home/svn/apps/apr/include/apr-1 -I/home/svn/apps/sqlite/include -I/home/svn/apps/ssl/include/openssl\
@@ -18,6 +18,8 @@ webdav.cpp: In function 'int svn_list(Handle&, const std::string&)':
 webdav.cpp:120: warning: 'svn_client_ls2' is deprecated (declared at /home/svn/apps/svn/include/subversion-1/svn_client.h:4942)
 webdav.cpp:120: warning: 'svn_client_ls2' is deprecated (declared at /home/svn/apps/svn/include/subversion-1/svn_client.h:4942)
 ```
+
+<!--more-->
 
 于是查看“/home/svn/apps/svn/include/subversion-1/svn_client.h”文件中对函数svn_client_ls2的声明，发现该函数之前有这么一个宏定义“SVN_DEPRECATED”。继续跟踪下去，发现SVN_DEPRECATED是这样定义的：
 

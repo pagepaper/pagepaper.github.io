@@ -17,6 +17,8 @@ updated: 2007-07-25 17:45:00
 > * 1、第一个算法需保证第一集合和第二集合有序，并从小到大排序，内部使用默认“<”操作符比较元素大小；
 > * 2、第二个算法需保证第一集合和第二集合有序，排序方式参照Compare确定，内部使用Compare比较元素大小。
 
+<!--more-->
+
 ## set_intersection(交集)
 ``` c++
 template <class InputIterator1, class InputIterator2, class OutputIterator>

@@ -11,6 +11,8 @@ urlname: de0674deb69068bdaa99dbf80d9eb63d
 在Linux先编译软件基本都是采用configure文件生成makefile，或者，cmake生成makefile文件两种方式。它们生成的makefile文件，一般默认不支持-g调试选项。
 但我们使用这种方式编译出来的静态库时，如果程序运行中core在静态库中，我们看不到有用的相关信息。所以有必要编译出debug版本。
 
+<!--more-->
+
 ## 针对configure文件而言：
 第一种方法:./configure -h， 我们会看到这样的信息。
 ![](/images/de0674deb69068bdaa99dbf80d9eb63d/1.png)
