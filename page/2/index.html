@@ -160,6 +160,88 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/posts/82fbc5d807d8cc41ab7379376be73ba4.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/logo/header.jpeg">
+      <meta itemprop="name" content="PagePaper">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PagePaper">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/posts/82fbc5d807d8cc41ab7379376be73ba4.html" class="post-title-link" itemprop="url">同步以及异步connect</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2008-09-13 10:50:50" itemprop="dateCreated datePublished" datetime="2008-09-13T10:50:50+08:00">2008-09-13</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">网络编程</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/types.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/socket.h&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="type">int</span> <span class="title function_">connect</span><span class="params">(<span class="type">int</span> sockfd, <span class="type">const</span> <span class="keyword">struct</span> sockaddr *addr, <span class="type">socklen_t</span> addrlen)</span>;</span><br></pre></td></tr></table></figure>
+<p>connect是socket套接口编程中非常重要的一个函数，它用于客户机连接使用TCP协议打开的服务机。</p>
+<p>connect有同步连接和异步连接两种模式。</p>
+<blockquote>
+<ul>
+<li>同步连接指的是，我们设置socket套接字为阻塞模式，调用connect之后，程序一直等待，直到该函数返回成功或者失败。如果连接过程中，发生了超时重传，接口的耗时时间有可能达127秒之久。假如我们的服务器程序只有一个网络线程，同步connect会阻塞该网络线程较长时间，在这段时间内将不能给其他连接提供服务。</li>
+<li>异步连接指的是，我们设置socket套接字为非阻塞模式，调用connect之后，该函数会马上返回，如果连接立即成功，那么皆大欢喜，就不用进行下步操作了。如果连接没有立即成功，我们就用select或者epoll等待操作系统给我们通知，接到通知后，我们再判断连接成功与否。在高性能服务器程序中，我们优先使用异步连接这种模式。</li>
+</ul>
+</blockquote>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/posts/82fbc5d807d8cc41ab7379376be73ba4.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/posts/70c2eff34a271c6535445168b4e91867.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -857,87 +939,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/posts/e184ac74b250b5e84824e9e520fb5e8f.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/assets/logo/header.jpeg">
-      <meta itemprop="name" content="PagePaper">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PagePaper">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/posts/e184ac74b250b5e84824e9e520fb5e8f.html" class="post-title-link" itemprop="url">C++语法之虚</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2007-07-13 16:45:00" itemprop="dateCreated datePublished" datetime="2007-07-13T16:45:00+08:00">2007-07-13</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C++</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>导语：C++中用“虚”的来命名的概念，涉及:</p>
-<ul>
-<li><font color="#FF0000">虚函数</font></li>
-<li><font color="#FF0000">虚析构函数</font></li>
-<li><font color="#FF0000">纯虚函数</font></li>
-<li><font color="#FF0000">虚基类</font></li>
-</ul>
-<p>本文简要的说明下在面临什么样的问题下使用相应的技术、这些概念又是如何解决问题的。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/posts/e184ac74b250b5e84824e9e520fb5e8f.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1009,20 +1010,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-count">26</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-count">8</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-count">34</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

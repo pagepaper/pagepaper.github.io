@@ -619,6 +619,96 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/posts/5c75ddd6ecde6f27c4a75fd895b847f6.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/logo/header.jpeg">
+      <meta itemprop="name" content="PagePaper">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PagePaper">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/posts/5c75ddd6ecde6f27c4a75fd895b847f6.html" class="post-title-link" itemprop="url">编译安装OpenSSH</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2015-07-10 13:07:58" itemprop="dateCreated datePublished" datetime="2015-07-10T13:07:58+08:00">2015-07-10</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%BD%AF%E4%BB%B6%E4%BD%BF%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">软件使用</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/OpenSSH/" itemprop="url" rel="index"><span itemprop="name">OpenSSH</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>OpenSSH是SSH(Secure SHell)协议的免费开源实现，SSH协议族可以用来进行远程控制， 或在计算机之间传送文件。OpenSSH是用于远程登录、命令执行以及文件传输的SSH协议的完整实现，它支持SSH协议的V1.3、V1.5和V2。自OpenSSH-V2.9 以来，默认的SSH协议是V2，使用RSA 钥匙。OpenSSH提供了服务端后台程序和客户端工具，用来加密远程控制和文件传输过程中的数据，并由此来代替原来的类似服务。</p>
+<p>程序主要包括了几个部分：</p>
+<blockquote>
+<ul>
+<li>ssh - rlogin与Telnet的替代方案。</li>
+<li>scp、sftp - rcp的替代方案，将文件复制到其他电脑上。</li>
+<li>sshd - SSH服务器。</li>
+<li>ssh-keygen - 产生RSA或DSA密钥，用来认证用。</li>
+<li>ssh-agent、ssh-add - 帮助用户不需要每次都要输入密钥密码的工具。</li>
+<li>ssh-keyscan - 扫描一群机器，并记录其公钥。</li>
+</ul>
+</blockquote>
+<p>在Centos、Ubuntu或者Debian等发行版上，我们可以使用yum或者apt提供的软件源直接安装。本文主要讲解的是使用源代码+手工编译+手工安装的方式来编译安装OpenSSH。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/posts/5c75ddd6ecde6f27c4a75fd895b847f6.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/posts/3aa7c02a866b00f888e1523895b6634e.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1001,88 +1091,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/posts/82fbc5d807d8cc41ab7379376be73ba4.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/assets/logo/header.jpeg">
-      <meta itemprop="name" content="PagePaper">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PagePaper">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/posts/82fbc5d807d8cc41ab7379376be73ba4.html" class="post-title-link" itemprop="url">同步以及异步connect</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2008-09-13 10:50:50" itemprop="dateCreated datePublished" datetime="2008-09-13T10:50:50+08:00">2008-09-13</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">网络编程</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/types.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/socket.h&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="type">int</span> <span class="title function_">connect</span><span class="params">(<span class="type">int</span> sockfd, <span class="type">const</span> <span class="keyword">struct</span> sockaddr *addr, <span class="type">socklen_t</span> addrlen)</span>;</span><br></pre></td></tr></table></figure>
-<p>connect是socket套接口编程中非常重要的一个函数，它用于客户机连接使用TCP协议打开的服务机。</p>
-<p>connect有同步连接和异步连接两种模式。</p>
-<blockquote>
-<ul>
-<li>同步连接指的是，我们设置socket套接字为阻塞模式，调用connect之后，程序一直等待，直到该函数返回成功或者失败。如果连接过程中，发生了超时重传，接口的耗时时间有可能达127秒之久。假如我们的服务器程序只有一个网络线程，同步connect会阻塞该网络线程较长时间，在这段时间内将不能给其他连接提供服务。</li>
-<li>异步连接指的是，我们设置socket套接字为非阻塞模式，调用connect之后，该函数会马上返回，如果连接立即成功，那么皆大欢喜，就不用进行下步操作了。如果连接没有立即成功，我们就用select或者epoll等待操作系统给我们通知，接到通知后，我们再判断连接成功与否。在高性能服务器程序中，我们优先使用异步连接这种模式。</li>
-</ul>
-</blockquote>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/posts/82fbc5d807d8cc41ab7379376be73ba4.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1154,20 +1162,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-count">26</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-count">8</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-count">34</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
