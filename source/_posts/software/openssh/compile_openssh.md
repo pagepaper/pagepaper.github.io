@@ -25,14 +25,16 @@ OpenSSH是SSH(Secure SHell)协议的免费开源实现，SSH协议族可以用�
 ## 下载OpenSSH源代码
 据我所知，OpenSSH有四个下载源代码的入口：
 **第一：Stable Releases代码包**
-该代码包包含了预先配置的configure文件，从Relase版本的发行说明页面，可以找到源代码的发行版本的源代码包。
+该代码包包含了预先配置的configure文件(<font color="#FF0000">如官方所说：Releases include a pre-built copy of the configure script</font>)。
 
-发行说明页面：[https://www.openssh.com/releasenotes.html](https://www.openssh.com/releasenotes.html)
+从Relase版本的发行说明页面，可以找到源代码的发行版本的源代码包。
+发行说明页面链接：[https://www.openssh.com/releasenotes.html](https://www.openssh.com/releasenotes.html)
 
 ![](/images/5c75ddd6ecde6f27c4a75fd895b847f6/7.png)
 
 **第二：Stable Releases代码包**
-该代码包包含了预先配置的configure文件，下载地址如下：[https://www.openssh.com/portable.html#downloads](https://www.openssh.com/portable.html#downloads)
+该代码包包含了预先配置的configure文件(<font color="#FF0000">如官方所说：Releases include a pre-built copy of the configure script</font>)。
+下载地址：[https://www.openssh.com/portable.html#downloads](https://www.openssh.com/portable.html#downloads)
 
 我们使用所列的HTTP镜像网站下载。
 ![](/images/5c75ddd6ecde6f27c4a75fd895b847f6/5.png)
@@ -48,13 +50,14 @@ Tag页面：[https://github.com/openssh/openssh-portable/tags](https://github.co
 
 ![](/images/5c75ddd6ecde6f27c4a75fd895b847f6/8.png)
 
-**第四：Git Clone当前main分支
+**第四：Git Clone当前main分支**
 ``` bash
 git clone https://github.com/openssh/openssh-portable # or https://anongit.mindrot.org/openssh.git
 ```
 
 ## 编译OpenSSH
 使用上述几种方式下载我们所需代码包之后，我们本地以代码包"openssh-portable-V_8_9_P1.tar.gz"为例，将其拷贝到服务器之后，相继执行如下命令：
+
 ``` bash
 tar -zxf openssh-portable-V_8_9_P1.tar.gz
 cd openssh-portable-V_8_9_P1
@@ -62,6 +65,7 @@ autoconf
 ll configure ## 查看configure文件是否正常生成
 ./configure
 ```
+<font color="#FF0000">**注意：Releases代码包提供了configure文件，所以无需使用autoreconf来生成configure文件，而Tags或者Git Clone版本需要执行autoreconf。**</font>
 <p />
 
 ![](/images/5c75ddd6ecde6f27c4a75fd895b847f6/1.png)
