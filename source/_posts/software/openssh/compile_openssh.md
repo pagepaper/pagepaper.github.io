@@ -46,24 +46,26 @@ OpenSSH是SSH(Secure SHell)协议的免费开源实现，SSH协议族可以用�
 
 **第三：使用Github仓库提供的Tags版本**
 Github的代码仓库没有提供Relase版本，提供了一些Tag版本，从Tags页面我们下载Tag版本。
+该代码包没有预先生成的configure脚本，需要我们自己生成(<font color="#FF0000">如官方所说：you'll need autoconf installed to build the configure script</font>)。
 Tag页面：[https://github.com/openssh/openssh-portable/tags](https://github.com/openssh/openssh-portable/tags)
 
 ![](/images/5c75ddd6ecde6f27c4a75fd895b847f6/8.png)
 
-**第四：Git Clone当前main分支**
+**第四：git clone当前main分支**
+该代码包没有预先生成的configure脚本，需要我们自己生成(<font color="#FF0000">如官方所说：you'll need autoconf installed to build the configure script</font>)。
 ``` bash
-git clone https://github.com/openssh/openssh-portable # or https://anongit.mindrot.org/openssh.git
+$ git clone https://github.com/openssh/openssh-portable # or https://anongit.mindrot.org/openssh.git
 ```
 
 ## 编译OpenSSH
 使用上述几种方式下载我们所需代码包之后，我们本地以代码包"openssh-portable-V_8_9_P1.tar.gz"为例，将其拷贝到服务器之后，相继执行如下命令：
 
 ``` bash
-tar -zxf openssh-portable-V_8_9_P1.tar.gz
-cd openssh-portable-V_8_9_P1
-autoconf
-ll configure ## 查看configure文件是否正常生成
-./configure
+$ tar -zxf openssh-portable-V_8_9_P1.tar.gz
+$ cd openssh-portable-V_8_9_P1
+$ autoconf
+$ ll configure ## 查看configure文件是否正常生成
+$ ./configure
 ```
 <font color="#FF0000">**注意：Releases代码包提供了configure文件，所以无需使用autoreconf来生成configure文件，而Tags或者Git Clone版本需要执行autoreconf。**</font>
 <p />
@@ -83,7 +85,7 @@ ll configure ## 查看configure文件是否正常生成
 
 使用<font color="#FF0000">**autoreconf**</font>命令再次产生configure文件，使用此文件进行配置，可以正常生成Makefile。
 ``` bash
-./configure
+$ ./configure
 ```
 <p/>
 
