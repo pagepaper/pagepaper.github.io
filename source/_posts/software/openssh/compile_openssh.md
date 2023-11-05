@@ -77,11 +77,11 @@ ll configure ## 查看configure文件是否正常生成
    ./configure: line 5859: `       OSSH_CHECK_CFLAG_COMPILE(-pipe)'
 >  ```
 > 
-> 从网上了找了下，错误的解决方法，提示不适用autoconf命令，[但可以使用autoreconf命令来解决](http://lists.mindrot.org/pipermail/openssh-bugs/2016-May/016330.html) 
+> 从网上了找了下，错误的解决方法，提示不适用autoconf命令，[但可以使用<font color="#FF0000">**autoreconf**</font>命令来解决](http://lists.mindrot.org/pipermail/openssh-bugs/2016-May/016330.html) 
 >
 > ![](/images/5c75ddd6ecde6f27c4a75fd895b847f6/3.png)
 
-使用autoreconf命令再次产生configure文件，使用此文件进行配置，可以正常生成Makefile。
+使用<font color="#FF0000">**autoreconf**</font>命令再次产生configure文件，使用此文件进行配置，可以正常生成Makefile。
 ``` bash
 ./configure
 ```
