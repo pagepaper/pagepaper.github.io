@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":20,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="背景1234#include &lt;sys&#x2F;types.h&gt;#include &lt;sys&#x2F;socket.h&gt; int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen); connect是socket套接口编程中非常重要的一个函数，它用于客户机连接使用TCP协议打开的服务机。 connect有同步">
+<meta property="og:type" content="article">
+<meta property="og:title" content="同步以及异步connect">
+<meta property="og:url" content="http://example.com/posts/82fbc5d807d8cc41ab7379376be73ba4.html">
+<meta property="og:site_name" content="PagePaper">
+<meta property="og:description" content="背景1234#include &lt;sys&#x2F;types.h&gt;#include &lt;sys&#x2F;socket.h&gt; int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen); connect是socket套接口编程中非常重要的一个函数，它用于客户机连接使用TCP协议打开的服务机。 connect有同步">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/82fbc5d807d8cc41ab7379376be73ba4/1.png">
+<meta property="og:image" content="http://example.com/images/82fbc5d807d8cc41ab7379376be73ba4/2.png">
+<meta property="og:image" content="http://example.com/images/82fbc5d807d8cc41ab7379376be73ba4/3.png">
+<meta property="og:image" content="http://example.com/images/82fbc5d807d8cc41ab7379376be73ba4/4.png">
+<meta property="og:image" content="http://example.com/images/82fbc5d807d8cc41ab7379376be73ba4/5.png">
+<meta property="article:published_time" content="2008-09-13T02:50:50.000Z">
+<meta property="article:modified_time" content="2008-09-13T02:50:50.000Z">
+<meta property="article:author" content="PagePaper">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/82fbc5d807d8cc41ab7379376be73ba4/1.png">
+
+<link rel="canonical" href="http://example.com/posts/82fbc5d807d8cc41ab7379376be73ba4.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>同步以及异步connect | PagePaper</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PagePaper</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/posts/82fbc5d807d8cc41ab7379376be73ba4.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/logo/header.jpeg">
+      <meta itemprop="name" content="PagePaper">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PagePaper">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          同步以及异步connect
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2008-09-13 10:50:50" itemprop="dateCreated datePublished" datetime="2008-09-13T10:50:50+08:00">2008-09-13</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">网络编程</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/types.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/socket.h&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="type">int</span> <span class="title function_">connect</span><span class="params">(<span class="type">int</span> sockfd, <span class="type">const</span> <span class="keyword">struct</span> sockaddr *addr, <span class="type">socklen_t</span> addrlen)</span>;</span><br></pre></td></tr></table></figure>
+<p>connect是socket套接口编程中非常重要的一个函数，它用于客户机连接使用TCP协议打开的服务机。</p>
+<p>connect有同步连接和异步连接两种模式。</p>
+<blockquote>
+<ul>
+<li>同步连接指的是，我们设置socket套接字为阻塞模式，调用connect之后，程序一直等待，直到该函数返回成功或者失败。如果连接过程中，发生了超时重传，接口的耗时时间有可能达127秒之久。假如我们的服务器程序只有一个网络线程，同步connect会阻塞该网络线程较长时间，在这段时间内将不能给其他连接提供服务。</li>
+<li>异步连接指的是，我们设置socket套接字为非阻塞模式，调用connect之后，该函数会马上返回，如果连接立即成功，那么皆大欢喜，就不用进行下步操作了。如果连接没有立即成功，我们就用select或者epoll等待操作系统给我们通知，接到通知后，我们再判断连接成功与否。在高性能服务器程序中，我们优先使用异步连接这种模式。</li>
+</ul>
+</blockquote>
+<span id="more"></span>
+
+<h2 id="connect的错误场景"><a href="#connect的错误场景" class="headerlink" title="connect的错误场景"></a>connect的错误场景</h2><p><strong>第一种场景：连接因特网中一个没有响应的主机。</strong><br>此种场景下，发起方执行三次握手中的第一步向因特网上发出SYNC包，经过网络上的各种中间路由器转发之后，仍然找不到主机或者主机不回包或者该SYNC包直接被路由器丢弃。发起方得不到SYNC响应，然后它会根据系统定义的超时重试机制，多次发送SYNC包。如果在执行完超时重传机制之后，发起方仍然得不到响应，那么它就放弃重试，并返回一个错误码为ETIMEDOUT(110)的超时错误给客户端程序。Linux系统默认发送7次connect请求，共计经历127秒等待。</p>
+<p>下图是我在内网抓包连接114.144.144.144的情况，这个IP好像是日本的一个IP地址，但在我的网络里没有响应。<br><img src="/images/82fbc5d807d8cc41ab7379376be73ba4/1.png"></p>
+<p><strong>第二种场景：连接网络中一个不可达的主机。</strong><br>此种场景下，分两种情况，其一是有路由规则，但该主机压根不存在，比如我在本地子网(192.168.9.X)中连接192.168.9.200这个不存在的主机，其二是没有路由规则进行数据转发。这两种情况下，无论是同步还是异步connect，都会跟ETIMEDOUT错误一样，在等待规定的一段时间后，返回给客户端程序一个ENETUNREACH(113)的错误。</p>
+<p>客户端连接192.168.9.200，客户主机发出ARP请求，要求那个不存在的主机响应以其硬件地址，客户端得不到ARP响应，向上报ENETUNREACH错误。<br><img src="/images/82fbc5d807d8cc41ab7379376be73ba4/2.png"></p>
+<br/>
+
+<p>客户端连接14.215.187.40，这个是IP是因特网中不可到达的IP地址。如果我们用tcpdump观察分组的情况，就会发现6跳以远的路由器返回了主机不可达的ICMP错误。这种情况下connect也会很快失败，然后返回一个ENETUNREACH(113)的错误给客户端程序。<br><img src="/images/82fbc5d807d8cc41ab7379376be73ba4/3.png"></p>
+<br/>
+
+<p>第三种场景：连接网络中一个可达的主机，但该主机端口未打开。<br>此种场景下，客户端连接192.168.9.46上的7788，但在7788这个端口上没有进程在等待与之连接。服务机接到SYNC包之后，返回客户机RST包，客户机收到RST之后，马上向客户端程序返回一个ECONNREFUSED(111)的错误。<br><img src="/images/82fbc5d807d8cc41ab7379376be73ba4/4.png"></p>
+<h2 id="connect超时时间和重试次数"><a href="#connect超时时间和重试次数" class="headerlink" title="connect超时时间和重试次数"></a>connect超时时间和重试次数</h2><p>Linux系统默认重试6次，总时间为127秒。我们看下它的超时重试行为：<br>（1）第 1 次发送SYN后等待   1s，如果超时，则重试<br>（2）第 2 次发送SYN后等待   2s（前次等待时间的2倍），如果超时，则重试<br>（3）第 3 次发送SYN后等待   4s（前次等待时间的2倍），如果超时，则重试<br>（4）第 4 次发送SYN后等待   8s（前次等待时间的2倍），如果超时，则重试<br>（5）第 5 次发送SYN后等待 16s（前次等待时间的2倍），如果超时，则重试<br>（6）第 6 次发送SYN后等待 32s（前次等待时间的2倍），如果超时，则重试<br>（7）第 7 次发送SYN后等待 64s（前次等待时间的2倍），如果超时，则超时失败<br>所以默认情况下，发送7次SYN报文其中重试6次，总等待时间为：1s+2s+4s+8s+16s+32s+64s&#x3D;127s。</p>
+<p>对于有些客户端程序来说，127秒的时间太长了。怎么修改这个时间呢？Linux内核中，net.ipv4.tcp_syn_retries表示建立TCP连接时SYN报文重试的次数，默认为6次。我们使用下面的命令可以查看机器的相应设置：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">motadou@dev-0-0:~$ sudo sysctl net.ipv4 | grep tcp</span><br><span class="line">......</span><br><span class="line">net.ipv4.tcp_rfc1337 = 0</span><br><span class="line">net.ipv4.tcp_sack = 1</span><br><span class="line">net.ipv4.tcp_slow_start_after_idle = 1</span><br><span class="line">net.ipv4.tcp_stdurg = 0</span><br><span class="line">net.ipv4.tcp_syn_retries = 6</span><br><span class="line">net.ipv4.tcp_synack_retries = 5</span><br><span class="line">net.ipv4.tcp_syncookies = 1</span><br><span class="line">net.ipv4.tcp_thin_dupack = 0</span><br><span class="line">net.ipv4.tcp_thin_linear_timeouts = 0</span><br><span class="line">net.ipv4.tcp_timestamps = 1</span><br><span class="line">......</span><br></pre></td></tr></table></figure>
+<br />
+
+<p>使用如下命令修改重试次数：<br><img src="/images/82fbc5d807d8cc41ab7379376be73ba4/5.png"></p>
+<p>值得我们注意的是，sysctl修改的内核参数在系统重启之后失效，如果需要持久化，将其添加到系统配置文件中。方法是，编辑&#x2F;etc&#x2F;sysctl.conf，添加： net.ipv4.tcp_syn_retries &#x3D; 3即可。</p>
+<h2 id="同步连接（阻塞连接）"><a href="#同步连接（阻塞连接）" class="headerlink" title="同步连接（阻塞连接）"></a>同步连接（阻塞连接）</h2><p>阻塞连接比较简单，创建网络套接字之后，就可以使用connect进行连接。默认创建的套接口为阻塞式。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 保存当前文件为：connect.cpp</span></span><br><span class="line"><span class="comment">// 编译：g++ -o connect connect.cpp</span></span><br><span class="line"><span class="comment">// 运行：./connect</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;errno.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/socket.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;netinet/tcp.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;netinet/in.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;arpa/inet.h&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> ** argv)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 创建socket套接口</span></span><br><span class="line">    <span class="type">int</span> iSocketFd = ::socket(AF_INET, SOCK_STREAM, <span class="number">0</span>);</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// 转换IP地址</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">xAddr</span>;</span></span><br><span class="line">    xAddr.sin_family = AF_INET;</span><br><span class="line">    xAddr.sin_port   = htons(<span class="number">7788</span>);</span><br><span class="line">    <span class="keyword">if</span> (::inet_pton(AF_INET, <span class="string">&quot;192.168.9.46&quot;</span>, &amp;(xAddr.sin_addr)) != <span class="number">1</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// 阻塞式连接192.168.9.46的7788端口</span></span><br><span class="line">    <span class="type">int</span> iRet = ::connect(iSocketFd, (<span class="keyword">struct</span> sockaddr *)&amp;xAddr, <span class="keyword">sizeof</span>(xAddr));</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">if</span> (iRet == <span class="number">0</span>) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 连接成功</span></span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;connect success&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 连接失败，查看errno，获取错误原因</span></span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;connect error:&quot;</span> &lt;&lt; iRet &lt;&lt; <span class="string">&quot;, errno:&quot;</span> &lt;&lt; errno &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="异步连接（非阻塞连接）"><a href="#异步连接（非阻塞连接）" class="headerlink" title="异步连接（非阻塞连接）"></a>异步连接（非阻塞连接）</h2><p>异步连接流程：</p>
+<ul>
+<li>第一步：使用socket创建套接口；</li>
+<li>第二步：设置套接口为非阻塞模式（默认为阻塞模式）;</li>
+<li>第三步：调用connect进行连接；</li>
+<li>第四步：判断第三步connect的返回值，如果返回值为0，表示连接立即成功，至此连接全部完成，不用再进行下面的步骤；</li>
+<li>第五步：判断第三步connect的返回值，如果返回值不为0，此时有两种情况：第一种情况errno为EINPROGRESS，表示连接没有立即成功，需进行二次判断，进入第六步；第二种情况errno不为EINPROGRESS，表示连接失败，调用close关闭套接口之后，再次connect；</li>
+<li>第六步：将该套接口加入epoll中，调用epoll_wait等待套接口的通知；</li>
+<li>第七步：如果连接成功，正常情况下epoll触发EPOLLOUT事件，不会触发EPOLLIN事件。但有一种情况，如果connect成功之后，服务端马上发送数据，此时客户端也会立刻得到EPOLLIN事件。如果连接失败，我们会得到EPOLLIN、EPOLLOUT、EPOLLERR和EPOLLHUP事件。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 保存当前文件为：connect.cpp</span></span><br><span class="line"><span class="comment">// 编译：g++ -o connect connect.cpp</span></span><br><span class="line"><span class="comment">// 运行：./connect</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;errno.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/socket.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;netinet/tcp.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;netinet/in.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;arpa/inet.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/epoll.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;fcntl.h&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">SetNonBlock</span><span class="params">(<span class="type">int</span> iFd)</span> </span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int</span> iFLValue = <span class="number">0</span>;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">if</span> ((iFLValue = ::fcntl(iFd, F_GETFL, <span class="number">0</span>)) == <span class="number">-1</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">return</span> ::fcntl(iFd, F_SETFL, iFLValue | O_NONBLOCK);</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="type">int</span> <span class="title function_">AsyncConnect</span><span class="params">(<span class="type">int</span> iSocketFd)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int32_t</span> iEpollFd = ::epoll_create(<span class="number">1</span>);</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// 添加网络套接口文件描述符到epoll中</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">epoll_event</span> <span class="title">xEvent</span>;</span></span><br><span class="line">    xEvent.data.u64 = iSocketFd;</span><br><span class="line">    xEvent.events   = EPOLLET | EPOLLOUT | EPOLLIN;</span><br><span class="line"> </span><br><span class="line">    ::epoll_ctl(iEpollFd, EPOLL_CTL_ADD, iSocketFd, &amp;xEvent);</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// 等待epoll通知</span></span><br><span class="line">    <span class="type">int</span> iRet = ::epoll_wait(iEpollFd, &amp;xEvent, <span class="number">1</span>, <span class="number">10</span>*<span class="number">1000</span>);</span><br><span class="line"> </span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;iRet:&quot;</span> &lt;&lt; iRet &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">if</span> (iRet == <span class="number">-1</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;epoll错误，具体错误查看errno&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"> </span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">if</span> (iRet == <span class="number">0</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;连接失败, 等待超时&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"> </span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// 如果是连接失败，必定触发EPOLLERR和EPOLLHUP</span></span><br><span class="line">    <span class="keyword">if</span> (xEvent.events &amp; EPOLLERR || xEvent.events &amp; EPOLLHUP)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;连接失败&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"> </span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;连接成功&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> ** argv)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 创建socket套接口</span></span><br><span class="line">    <span class="type">int</span> iSocketFd = ::socket(AF_INET, SOCK_STREAM, <span class="number">0</span>);</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// 设置为非阻塞套接口</span></span><br><span class="line">    SetNonBlock(iSocketFd);</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// 转换IP地址</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">xAddr</span>;</span></span><br><span class="line">    xAddr.sin_family = AF_INET;</span><br><span class="line">    xAddr.sin_port   = htons(<span class="number">7788</span>);</span><br><span class="line">    <span class="keyword">if</span> (::inet_pton(AF_INET, <span class="string">&quot;114.144.144.144&quot;</span>, &amp;(xAddr.sin_addr)) != <span class="number">1</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// 非阻塞式连接</span></span><br><span class="line">    <span class="type">int</span> iRet = ::connect(iSocketFd, (<span class="keyword">struct</span> sockaddr *)&amp;xAddr, <span class="keyword">sizeof</span>(xAddr));</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">if</span> (iRet == <span class="number">0</span>)                  <span class="comment">// 异步连接，立即成功的情况</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;连接立即成功&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (errno == EINPROGRESS)  <span class="comment">// 异步连接，延迟成功的情况，开始进入异步连接模式</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (AsyncConnect(iSocketFd) == <span class="number">-1</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            ::close(iSocketFd);     <span class="comment">// 如果失败，记得关闭套接字</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span>                            <span class="comment">// 连接失败，查看errno，获取错误原因</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;连接失败, errno:&quot;</span> &lt;&lt; errno &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"> </span><br><span class="line">        ::close(iSocketFd);         <span class="comment">// 如果失败，记得关闭套接字</span></span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<br />
+
+<p><strong>关于上述代码的说明：</strong><br>我们是在响应事件EPOLLERR&amp;EPOLLHUP的代码中来判断连接失败的情况，还有一种方法是在响应EPOLLIN或者EPOLLOUT的代码中，调用getsockopt来进行判断：如果描述符变为可读或者可写，我们就调用getsockopt取得套接字的待处理错误，如果连接成功建立，该值为0，否则该值就是对应连接错误的errno（比如ECONNRERUSED、ETIMEDOUT等）。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> iVal = <span class="number">0</span>;</span><br><span class="line"><span class="type">socklen_t</span> iLen = static_cast&lt;<span class="type">socklen_t</span>&gt;(<span class="keyword">sizeof</span>(<span class="type">int</span>));</span><br><span class="line"><span class="keyword">if</span> ((::getsockopt(iSocketFd, SOL_SOCKET, SO_ERROR, reinterpret_cast&lt;<span class="type">char</span> *&gt;(&amp;iVal), &amp;iLen) == <span class="number">-1</span>) || (iVal != <span class="number">0</span>))</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;连接错误，errno为：&quot;</span> &lt;&lt; iVal &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/posts/70c2eff34a271c6535445168b4e91867.html" rel="prev" title="查看glibc版本号">
+      <i class="fa fa-chevron-left"></i> 查看glibc版本号
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/posts/d35b2923c9174ea2f2275ceef6feb78f.html" rel="next" title="实现可执行的so动态链接库">
+      实现可执行的so动态链接库 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#connect%E7%9A%84%E9%94%99%E8%AF%AF%E5%9C%BA%E6%99%AF"><span class="nav-number">2.</span> <span class="nav-text">connect的错误场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#connect%E8%B6%85%E6%97%B6%E6%97%B6%E9%97%B4%E5%92%8C%E9%87%8D%E8%AF%95%E6%AC%A1%E6%95%B0"><span class="nav-number">3.</span> <span class="nav-text">connect超时时间和重试次数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%8C%E6%AD%A5%E8%BF%9E%E6%8E%A5%EF%BC%88%E9%98%BB%E5%A1%9E%E8%BF%9E%E6%8E%A5%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">同步连接（阻塞连接）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%82%E6%AD%A5%E8%BF%9E%E6%8E%A5%EF%BC%88%E9%9D%9E%E9%98%BB%E5%A1%9E%E8%BF%9E%E6%8E%A5%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">异步连接（非阻塞连接）</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PagePaper"
+      src="/assets/logo/header.jpeg">
+  <p class="site-author-name" itemprop="name">PagePaper</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/weimake" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;weimake" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:pagepaper@126.com" title="E-Mail → mailto:pagepaper@126.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/motadou" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;motadou" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://plus.google.com/pagepaper" title="Google → https:&#x2F;&#x2F;plus.google.com&#x2F;pagepaper" rel="noopener" target="_blank"><i class="fa fa-fw fa-google"></i>Google</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PagePaper</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

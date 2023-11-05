@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":20,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="时间函数之间的关系 123456789101112struct tm&amp;#123;    int tm_sec;    &#x2F;&#x2F; 代表目前秒数，正常范围0-59，但允许至61秒；    int tm_min;    &#x2F;&#x2F; 代表目前分数，范围为0-59。    int tm_hour;   &#x2F;&#x2F; 从午夜算起的小时数，范围为0-23。    int tm_mday;   &#x2F;&#x2F; 目前月份的日数，范围为1-31">
+<meta property="og:type" content="article">
+<meta property="og:title" content="c&amp;c++ datetime">
+<meta property="og:url" content="http://example.com/posts/32290a92a8b1f3c200b3fb51ae3573c3.html">
+<meta property="og:site_name" content="PagePaper">
+<meta property="og:description" content="时间函数之间的关系 123456789101112struct tm&amp;#123;    int tm_sec;    &#x2F;&#x2F; 代表目前秒数，正常范围0-59，但允许至61秒；    int tm_min;    &#x2F;&#x2F; 代表目前分数，范围为0-59。    int tm_hour;   &#x2F;&#x2F; 从午夜算起的小时数，范围为0-23。    int tm_mday;   &#x2F;&#x2F; 目前月份的日数，范围为1-31">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/32290a92a8b1f3c200b3fb51ae3573c3/1.png">
+<meta property="article:published_time" content="2007-01-09T05:07:58.000Z">
+<meta property="article:modified_time" content="2007-01-09T05:07:58.000Z">
+<meta property="article:author" content="PagePaper">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/32290a92a8b1f3c200b3fb51ae3573c3/1.png">
+
+<link rel="canonical" href="http://example.com/posts/32290a92a8b1f3c200b3fb51ae3573c3.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>c&c++ datetime | PagePaper</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PagePaper</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/posts/32290a92a8b1f3c200b3fb51ae3573c3.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/logo/header.jpeg">
+      <meta itemprop="name" content="PagePaper">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PagePaper">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          c&c++ datetime
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2007-01-09 13:07:58" itemprop="dateCreated datePublished" datetime="2007-01-09T13:07:58+08:00">2007-01-09</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BC%96%E7%A8%8B%E5%BC%80%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">编程开发</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="时间函数之间的关系"><a href="#时间函数之间的关系" class="headerlink" title="时间函数之间的关系"></a>时间函数之间的关系</h2><p><img src="/images/32290a92a8b1f3c200b3fb51ae3573c3/1.png"></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">tm</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    <span class="type">int</span> tm_sec;    <span class="comment">// 代表目前秒数，正常范围0-59，但允许至61秒；</span></span><br><span class="line">    <span class="type">int</span> tm_min;    <span class="comment">// 代表目前分数，范围为0-59。</span></span><br><span class="line">    <span class="type">int</span> tm_hour;   <span class="comment">// 从午夜算起的小时数，范围为0-23。</span></span><br><span class="line">    <span class="type">int</span> tm_mday;   <span class="comment">// 目前月份的日数，范围为1-31。</span></span><br><span class="line">    <span class="type">int</span> tm_mon;    <span class="comment">// 代表目前月份，从一月算起，范围为0-11。</span></span><br><span class="line">    <span class="type">int</span> tm_year;   <span class="comment">// 从1900年算起至今的年数。比如（时间戳1970-01-02 10:23:09，该值为70）。</span></span><br><span class="line">    <span class="type">int</span> tm_wday;   <span class="comment">// 一星期中的日数，从星期日算起，范围为0-6。</span></span><br><span class="line">    <span class="type">int</span> tm_yday;   <span class="comment">// 从1月1日算起至今的天数，范围为：0-365。</span></span><br><span class="line">    <span class="type">int</span> tm_isdst;  <span class="comment">// 日光节约时间的旗标。</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<br />
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;time.h&gt;</span></span></span><br><span class="line"><span class="type">time_t</span> <span class="title function_">time</span><span class="params">(<span class="type">time_t</span> * t)</span>;</span><br></pre></td></tr></table></figure>
+此函数会返回从公元1970年1月1日的UTC时间从0时0分0秒算起到现在所经过的秒数。如果t并非空指针的话，此函数也会将返回值存到t指针所指的内存。如果失败则返回((time_t)-1)。
+<p>
+
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;time.h&gt;</span></span></span><br><span class="line"><span class="keyword">struct</span> tm * <span class="title function_">gmtime</span><span class="params">(<span class="type">const</span> <span class="type">time_t</span> * timep)</span>;</span><br></pre></td></tr></table></figure>
+<p>该函数将参数timep所指的time_t结构中的信息转换成真实世界所使用的日期表示方法，然后将结果由结构tm返回。该返回值代表目前的UTC时间。</p>
+<p>
+
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;time.h&gt;</span></span></span><br><span class="line"><span class="keyword">struct</span> tm * <span class="title function_">localtime</span><span class="params">(<span class="type">const</span> <span class="type">time_t</span> * timep)</span>;</span><br></pre></td></tr></table></figure>
+<p>该函数将参数timep所指的time_t结构中的信息转换成真实世界所使用的日期表示方法，然后将结果由结构tm返回。该返回值代表目前的当地时区的当地时间。</p>
+<p>
+
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;time.h&gt;</span></span></span><br><span class="line"><span class="type">time_t</span> <span class="title function_">mktime</span><span class="params">(<span class="keyword">struct</span> tm * timeptr)</span>;</span><br></pre></td></tr></table></figure>
+<p>该函数将参数timeptr所指的tm结构数据转换成从公元1970年1月1日0时0分0秒算起的至今的UTC时间所经过的秒数。</p>
+<p>
+
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;time.h&gt;</span></span></span><br><span class="line"><span class="type">size_t</span> <span class="title function_">strftime</span><span class="params">(<span class="type">char</span> *s, <span class="type">size_t</span> max, <span class="type">const</span> <span class="type">char</span> *format, <span class="type">const</span> <span class="keyword">struct</span> tm *tm)</span>;</span><br></pre></td></tr></table></figure>
+<p>该函数将参数tm，依照参数format所指定的字符串格式做转换，转换后的字符串复制到参数s所指的字符串数组中，该字符串的最大长度为参数max所控制。</p>
+<p>
+
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;time.h&gt;</span></span></span><br><span class="line"><span class="type">char</span> *<span class="title function_">strptime</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *s, <span class="type">const</span> <span class="type">char</span> *format, <span class="keyword">struct</span> tm *tm)</span>;</span><br></pre></td></tr></table></figure>
+<p>该函数将参数s所指定的按一定格式要求编制的字符串，根据格式化参数format，转换成tm结构的值。如果分析错误，返回NULL。</p>
+<p>
+
+<h2 id="strftime和strptime的格式参数"><a href="#strftime和strptime的格式参数" class="headerlink" title="strftime和strptime的格式参数"></a>strftime和strptime的格式参数</h2><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>%a</td>
+<td>星期几的简写</td>
+</tr>
+<tr>
+<td>%A</td>
+<td>星期几的全称</td>
+</tr>
+<tr>
+<td>%A</td>
+<td>星期几的全称</td>
+</tr>
+<tr>
+<td>%b</td>
+<td>月分的简写</td>
+</tr>
+<tr>
+<td>%B</td>
+<td>月份的全称</td>
+</tr>
+<tr>
+<td>%c</td>
+<td>标准的日期的时间串</td>
+</tr>
+<tr>
+<td>%C</td>
+<td>年份的前两位数字，比如1997年表示为：19</td>
+</tr>
+<tr>
+<td>%d</td>
+<td>十进制表示的每月的第几天，表示法为：01-31</td>
+</tr>
+<tr>
+<td>%D</td>
+<td>格式为“月&#x2F;天&#x2F;年”表示时间。相当于“%m%d%y”格式。例如“19970701”</td>
+</tr>
+<tr>
+<td>%e</td>
+<td>十进制表示的每月的第几天（不补0），表示法为：1-31。</td>
+</tr>
+<tr>
+<td>%F</td>
+<td>使用“%Y-%m-%d”格式表示日期。例如“1997-07-01”。</td>
+</tr>
+<tr>
+<td>%g</td>
+<td>年份的后两位数字，比如1997年表示为：97</td>
+</tr>
+<tr>
+<td>%G</td>
+<td>完整的公元年份表示，比如1997年表示：1997</td>
+</tr>
+<tr>
+<td>%h</td>
+<td>同“%b”一样，简写的月份名。</td>
+</tr>
+<tr>
+<td>%H</td>
+<td>以24小时制表示小时数（00-23）。</td>
+</tr>
+<tr>
+<td>%I</td>
+<td>以12小时制表示小时数（01-12）。</td>
+</tr>
+<tr>
+<td>%j</td>
+<td>十进制表示一年中的天数（001-366）。</td>
+</tr>
+<tr>
+<td>%k</td>
+<td>同“%H”，表示法为：0-23</td>
+</tr>
+<tr>
+<td>%l</td>
+<td>同“%I”，表示法为：1-12。</td>
+</tr>
+<tr>
+<td>%m</td>
+<td>十进制表示的月份，表示法：01-12。</td>
+</tr>
+<tr>
+<td>%M</td>
+<td>十时制表示的分钟数，表示法：00-59。</td>
+</tr>
+<tr>
+<td>%n</td>
+<td>同“\n”，换行。</td>
+</tr>
+<tr>
+<td>%p</td>
+<td>本地AM或PM的等价显示。</td>
+</tr>
+<tr>
+<td>%P</td>
+<td>同“%p”相似，但使用小写的am和pm来表示。</td>
+</tr>
+<tr>
+<td>%r</td>
+<td>相当于使用“%I:%M:%S %p”格式，例如：“08:31:50 PM”。</td>
+</tr>
+<tr>
+<td>%R</td>
+<td>相当于使用“%H:%M”格式，例如：“22:31”。</td>
+</tr>
+<tr>
+<td>%S</td>
+<td>十进制的秒数，表示法：00-59。</td>
+</tr>
+<tr>
+<td>%t</td>
+<td>水平制表符，同“\t”</td>
+</tr>
+<tr>
+<td>%T</td>
+<td>24小时时间表示，相当于“%H:%M:%S”格式。</td>
+</tr>
+<tr>
+<td>%u</td>
+<td>一星期中的星期日期，范围：1-7，星期一从1开始。</td>
+</tr>
+<tr>
+<td>%U</td>
+<td>一年中的星期数，范围：00-53，一月第一个星期日开始为01。</td>
+</tr>
+<tr>
+<td>%V</td>
+<td>一年中的星期数，范围：00-53，一月第一个星期一开始为01。</td>
+</tr>
+<tr>
+<td>%w</td>
+<td>一星期中的星期日期，范围：0-6，星期日从0开始。</td>
+</tr>
+<tr>
+<td>%W</td>
+<td>一年中的星期数，范围：00-53，一月第一个星期一开始为01。</td>
+</tr>
+<tr>
+<td>%x</td>
+<td>标准的日期串。比如2017年1月2日，表示成：”01&#x2F;02&#x2F;17”。</td>
+</tr>
+<tr>
+<td>%X</td>
+<td>标准的时间串。比如2017年1月2日10点23分9秒，表示成：“10:23:09”。</td>
+</tr>
+<tr>
+<td>%y</td>
+<td>不带世纪的十进制年份（值从0到99）</td>
+</tr>
+<tr>
+<td>%Y</td>
+<td>带世纪部分的十制年份</td>
+</tr>
+<tr>
+<td>%z，%Z</td>
+<td>时区名称，如果不能得到时区名称则返回空字符。</td>
+</tr>
+<tr>
+<td>%%</td>
+<td>百分号</td>
+</tr>
+</tbody></table>
+<p><strong>关于%U参数：</strong><br>比如2017年的1月1日是星期日，使用%U得到的值是“01”<br>比如2016年的1月1日是星期五，使用%U得到的值是“00”</p>
+<p><strong>关于%V参数：</strong><br>比如2017年的1月1日是星期日，使用%V得到的值是“52”<br>比如2017年的1月1日是星期一，使用%V得到的值是“01”<br>比如2016年的1月1日是星期五，使用%V得到的值是“53”</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/posts/61d8c7193f1b87013604e2667a0ec9df.html" rel="next" title="大端法、小端法、网络字节序">
+      大端法、小端法、网络字节序 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%97%B6%E9%97%B4%E5%87%BD%E6%95%B0%E4%B9%8B%E9%97%B4%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-number">1.</span> <span class="nav-text">时间函数之间的关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#strftime%E5%92%8Cstrptime%E7%9A%84%E6%A0%BC%E5%BC%8F%E5%8F%82%E6%95%B0"><span class="nav-number">2.</span> <span class="nav-text">strftime和strptime的格式参数</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PagePaper"
+      src="/assets/logo/header.jpeg">
+  <p class="site-author-name" itemprop="name">PagePaper</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/weimake" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;weimake" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:pagepaper@126.com" title="E-Mail → mailto:pagepaper@126.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/motadou" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;motadou" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://plus.google.com/pagepaper" title="Google → https:&#x2F;&#x2F;plus.google.com&#x2F;pagepaper" rel="noopener" target="_blank"><i class="fa fa-fw fa-google"></i>Google</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PagePaper</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

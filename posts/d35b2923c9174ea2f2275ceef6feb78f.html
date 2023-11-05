@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":20,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="背景相比于静态链接库，Linux上的动态链接库和可执行程序都是ELF格式。原理上动态库也能和可执行程序一样直接运行。 比如，可以直接运行“&#x2F;lib64&#x2F;ld-linux-x86-64.so.2”，还有“&#x2F;lib&#x2F;x86_64-linux-gnu&#x2F;libpthread.so.0”， 还有“&#x2F;lib&#x2F;x86_64-linux-gnu">
+<meta property="og:type" content="article">
+<meta property="og:title" content="实现可执行的so动态链接库">
+<meta property="og:url" content="http://example.com/posts/d35b2923c9174ea2f2275ceef6feb78f.html">
+<meta property="og:site_name" content="PagePaper">
+<meta property="og:description" content="背景相比于静态链接库，Linux上的动态链接库和可执行程序都是ELF格式。原理上动态库也能和可执行程序一样直接运行。 比如，可以直接运行“&#x2F;lib64&#x2F;ld-linux-x86-64.so.2”，还有“&#x2F;lib&#x2F;x86_64-linux-gnu&#x2F;libpthread.so.0”， 还有“&#x2F;lib&#x2F;x86_64-linux-gnu">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/d35b2923c9174ea2f2275ceef6feb78f/1.png">
+<meta property="og:image" content="http://example.com/images/d35b2923c9174ea2f2275ceef6feb78f/2.png">
+<meta property="og:image" content="http://example.com/images/d35b2923c9174ea2f2275ceef6feb78f/3.png">
+<meta property="article:published_time" content="2008-09-14T01:12:58.000Z">
+<meta property="article:modified_time" content="2008-09-14T01:12:58.000Z">
+<meta property="article:author" content="PagePaper">
+<meta property="article:tag" content="动态链接库">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/d35b2923c9174ea2f2275ceef6feb78f/1.png">
+
+<link rel="canonical" href="http://example.com/posts/d35b2923c9174ea2f2275ceef6feb78f.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>实现可执行的so动态链接库 | PagePaper</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PagePaper</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/posts/d35b2923c9174ea2f2275ceef6feb78f.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/logo/header.jpeg">
+      <meta itemprop="name" content="PagePaper">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PagePaper">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          实现可执行的so动态链接库
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2008-09-14 09:12:58" itemprop="dateCreated datePublished" datetime="2008-09-14T09:12:58+08:00">2008-09-14</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BC%96%E7%A8%8B%E5%BC%80%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">编程开发</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>相比于静态链接库，Linux上的动态链接库和可执行程序都是ELF格式。原理上动态库也能和可执行程序一样直接运行。</p>
+<p>比如，可以直接运行“&#x2F;lib64&#x2F;ld-linux-x86-64.so.2”，还有“&#x2F;lib&#x2F;x86_64-linux-gnu&#x2F;libpthread.so.0”， 还有“&#x2F;lib&#x2F;x86_64-linux-gnu&#x2F;libc.so.6”等等。举个例子，libc.so.6是C&#x2F;C++运行时库的GNU实现，我们直接运行该动态库，打印如下信息：<br><img src="/images/d35b2923c9174ea2f2275ceef6feb78f/1.png"></p>
+<p>可见，动态库直接运行后，提示了该动态库的编译信息、版本信息等等。在实际项目中，我们也可以为动态库增加类似功能，用户直接运行我们提供的动态库之后，我们就打印该库的编译环境、运行方法、编译版本等等信息，或者完成其他功能。</p>
+<span id="more"></span>
+
+<h2 id="让动态库可以直接运行的方法和原理"><a href="#让动态库可以直接运行的方法和原理" class="headerlink" title="让动态库可以直接运行的方法和原理"></a>让动态库可以直接运行的方法和原理</h2><p>要让一个动态链接库可以直接运行，那么需要在其编译期间指定一个入口函数。当我们直接运行该动态库时，系统直接调用该入口函数。<br>C语言的实现示例如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 保存：将本文件保存，比如名称叫做：sotest.c</span></span><br><span class="line"><span class="comment">// 编译：gcc -shared sotest.c -o libtest.so -Wl,-e,__lib_main -fPIC</span></span><br><span class="line"><span class="comment">// 运行：./libtest.so</span></span><br><span class="line"> </span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span> <span class="comment">// needed for the _exit() function</span></span></span><br><span class="line"> </span><br><span class="line"><span class="comment">// Must define the interpretor to be the dynamic linker</span></span><br><span class="line"><span class="meta">#<span class="keyword">ifdef</span> __LP64__</span></span><br><span class="line"><span class="type">const</span> <span class="type">char</span> service_interp[] __attribute__((section(<span class="string">&quot;.interp&quot;</span>))) = <span class="string">&quot;/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2&quot;</span>;</span><br><span class="line"><span class="meta">#<span class="keyword">else</span></span></span><br><span class="line"><span class="type">const</span> <span class="type">char</span> service_interp[] __attribute__((section(<span class="string">&quot;.interp&quot;</span>))) = <span class="string">&quot;/lib/ld-linux.so.2&quot;</span>;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"> </span><br><span class="line"><span class="type">void</span> __lib_main(<span class="type">void</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Entry point of libtest.so \n&quot;</span>);</span><br><span class="line"> </span><br><span class="line">    _exit(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>编译运行：<br><img src="/images/d35b2923c9174ea2f2275ceef6feb78f/2.png"></p>
+<p>其中：</p>
+<blockquote>
+<ul>
+<li>1）service_interp指明了动态链接器ld的位置，系统不同，该位置可能不同；</li>
+<li>2）入口函数__lib_main必须以_exit(0)或者exit(0)结束，否则可能会coredump；</li>
+<li>3）-Wl表示传递给动态链接器ld的参数，后续的逗号会被替换为空格；</li>
+<li>4）-e,__lib_main指定了入口函数，__lib_main名称仅示例，名称可自取;</li>
+</ul>
+</blockquote>
+<p>C++的实现方法和C版本没有大的区别，需要在其入口函数加上extern “C”，来表明按照C语言的编译和链接规约来编译和链接，而不是C++的编译的链接规约。</p>
+<p>C++语言的实现示例如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 保存：将本文件保存，比如名称叫做：sotest.cpp</span></span><br><span class="line"><span class="comment">// 编译：g++ -shared sotest.cpp -o libtest.so -Wl,-e,__lib_main -fPIC</span></span><br><span class="line"><span class="comment">// 运行：./libtest.so</span></span><br><span class="line"> </span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span> <span class="comment">// needed for the _exit() function</span></span></span><br><span class="line"> </span><br><span class="line"><span class="comment">// Must define the interpretor to be the dynamic linker</span></span><br><span class="line"><span class="meta">#<span class="keyword">ifdef</span> __LP64__</span></span><br><span class="line"><span class="type">const</span> <span class="type">char</span> service_interp[] __attribute__((section(<span class="string">&quot;.interp&quot;</span>))) = <span class="string">&quot;/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2&quot;</span>;</span><br><span class="line"><span class="meta">#<span class="keyword">else</span></span></span><br><span class="line"><span class="type">const</span> <span class="type">char</span> service_interp[] __attribute__((section(<span class="string">&quot;.interp&quot;</span>))) = <span class="string">&quot;/lib/ld-linux.so.2&quot;</span>;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"> </span><br><span class="line"><span class="keyword">extern</span> <span class="string">&quot;C&quot;</span> &#123;</span><br><span class="line">     </span><br><span class="line"><span class="type">void</span> __lib_main(<span class="type">void</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Entry point of libtest.so \n&quot;</span>);</span><br><span class="line"> </span><br><span class="line">    _exit(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="入口函数的参数问题"><a href="#入口函数的参数问题" class="headerlink" title="入口函数的参数问题"></a>入口函数的参数问题</h2><p>动态链接库的入口函数不能像可执行程序int main(int argc, char ** argv)那样直接传入和获取参数。如果我们要向动态库的入口函数传递参数，动态库必须自己分析&#x2F;proc&#x2F;self&#x2F;cmdline文件中的内容，自行分割参数。</p>
+<p>示例如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 保存：将本文件保存，比如名称叫做：sotest.c</span></span><br><span class="line"><span class="comment">// 编译：gcc -shared sotest.c -o libtest.so -Wl,-e,__lib_main -fPIC</span></span><br><span class="line"><span class="comment">// 运行：./libtest.so 111 222 333 444 555 666 777</span></span><br><span class="line"> </span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;fcntl.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/types.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">CmdLine</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int</span>     argc;</span><br><span class="line">    <span class="type">char</span> ** argv;</span><br><span class="line">&#125;;</span><br><span class="line"> </span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">ReadCmdLine</span><span class="params">(<span class="keyword">struct</span> CmdLine * pLine)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    pLine-&gt;argc = <span class="number">0</span>;</span><br><span class="line">    pLine-&gt;argv = <span class="literal">NULL</span>;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">/////////////////////////////////////////////////////////////////////////////////////</span></span><br><span class="line">    <span class="comment">/// 读取文件</span></span><br><span class="line">    <span class="type">int32_t</span> iFileId = <span class="built_in">open</span>(<span class="string">&quot;/proc/self/cmdline&quot;</span>, O_RDONLY, <span class="number">0644</span>);</span><br><span class="line">    <span class="keyword">if</span> (iFileId &lt; <span class="number">0</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> ;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="type">char</span> szBuff[<span class="number">8192</span>];</span><br><span class="line">    <span class="type">int</span> iFileSize = <span class="built_in">read</span>(iFileId, szBuff, <span class="built_in">sizeof</span>(szBuff));</span><br><span class="line">    <span class="type">int</span> iBegin    = <span class="number">0</span>;</span><br><span class="line">    <span class="type">int</span> iTemp     = <span class="number">0</span>;</span><br><span class="line"> </span><br><span class="line">    <span class="built_in">close</span>(iFileId);</span><br><span class="line"> </span><br><span class="line">    <span class="comment">/////////////////////////////////////////////////////////////////////////////////////</span></span><br><span class="line">    <span class="comment">/// 分析cmdLine</span></span><br><span class="line">    <span class="keyword">for</span> (iTemp = <span class="number">0</span>; iTemp &lt; iFileSize; iTemp++)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (szBuff[iTemp] == <span class="string">&#x27;\0&#x27;</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            pLine-&gt;argc++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    pLine-&gt;argv = (<span class="type">char</span> **)<span class="built_in">malloc</span>(pLine-&gt;argc * <span class="built_in">sizeof</span>(<span class="type">char</span> *));</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">for</span> (iTemp = <span class="number">0</span>, pLine-&gt;argc = <span class="number">0</span>; iTemp &lt; iFileSize; iTemp++)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (szBuff[iTemp] == <span class="string">&#x27;\0&#x27;</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="type">char</span> * p = (<span class="type">char</span> *)<span class="built_in">malloc</span>(iTemp - iBegin + <span class="number">1</span>);</span><br><span class="line"> </span><br><span class="line">            <span class="built_in">memcpy</span>(p, szBuff + iBegin, iTemp - iBegin);</span><br><span class="line"> </span><br><span class="line">            p[iTemp - iBegin] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line"> </span><br><span class="line">            pLine-&gt;argv[pLine-&gt;argc++] = p;</span><br><span class="line"> </span><br><span class="line">            iBegin = iTemp + <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// Must define the interpretor to be the dynamic linker</span></span><br><span class="line"><span class="meta">#<span class="keyword">ifdef</span> __LP64__</span></span><br><span class="line"><span class="type">const</span> <span class="type">char</span> service_interp[] __attribute__((<span class="built_in">section</span>(<span class="string">&quot;.interp&quot;</span>))) = <span class="string">&quot;/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2&quot;</span>;</span><br><span class="line"><span class="meta">#<span class="keyword">else</span></span></span><br><span class="line"><span class="type">const</span> <span class="type">char</span> service_interp[] __attribute__((<span class="built_in">section</span>(<span class="string">&quot;.interp&quot;</span>))) = <span class="string">&quot;/lib/ld-linux.so.2&quot;</span>;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"> </span><br><span class="line"><span class="type">void</span> __lib_main(<span class="type">void</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Entry point of libtest.so \n&quot;</span>);</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">CmdLine</span> cmdLine;</span><br><span class="line"> </span><br><span class="line">    <span class="built_in">ReadCmdLine</span>(&amp;cmdLine);</span><br><span class="line"> </span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;argc:%d\n&quot;</span>, cmdLine.argc);</span><br><span class="line"> </span><br><span class="line">    <span class="type">int</span> iTemp = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> ( ; iTemp &lt; cmdLine.argc; iTemp++)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;arg:%s\n&quot;</span>, cmdLine.argv[iTemp]);</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    _exit(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行上述示例代码：</p>
+<p><img src="/images/d35b2923c9174ea2f2275ceef6feb78f/3.png"></p>
+<p>参考<br>1.<a target="_blank" rel="noopener" href="http://product.dangdang.com/1033555531.html">《Advanced C and C++ Compiling》</a><br>2.<a target="_blank" rel="noopener" href="http://rachid.koucha.free.fr/tech_corner/executable_lib.html">http://rachid.koucha.free.fr/tech_corner/executable_lib.html</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5%E5%BA%93/" rel="tag"># 动态链接库</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/posts/82fbc5d807d8cc41ab7379376be73ba4.html" rel="prev" title="同步以及异步connect">
+      <i class="fa fa-chevron-left"></i> 同步以及异步connect
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/posts/fd041d79f7e98f1ea7e291ec02a5af7f.html" rel="next" title="LwIP源代码文件目录解析">
+      LwIP源代码文件目录解析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%A9%E5%8A%A8%E6%80%81%E5%BA%93%E5%8F%AF%E4%BB%A5%E7%9B%B4%E6%8E%A5%E8%BF%90%E8%A1%8C%E7%9A%84%E6%96%B9%E6%B3%95%E5%92%8C%E5%8E%9F%E7%90%86"><span class="nav-number">2.</span> <span class="nav-text">让动态库可以直接运行的方法和原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%A5%E5%8F%A3%E5%87%BD%E6%95%B0%E7%9A%84%E5%8F%82%E6%95%B0%E9%97%AE%E9%A2%98"><span class="nav-number">3.</span> <span class="nav-text">入口函数的参数问题</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PagePaper"
+      src="/assets/logo/header.jpeg">
+  <p class="site-author-name" itemprop="name">PagePaper</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/weimake" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;weimake" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:pagepaper@126.com" title="E-Mail → mailto:pagepaper@126.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/motadou" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;motadou" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://plus.google.com/pagepaper" title="Google → https:&#x2F;&#x2F;plus.google.com&#x2F;pagepaper" rel="noopener" target="_blank"><i class="fa fa-fw fa-google"></i>Google</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PagePaper</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

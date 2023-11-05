@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":20,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="我们知道一个程序可以包含多个进程，每个进程中可以创建多个线程，在线程中又可以创建成千上万甚至更多个协程。进程和线程的创建以及调度需要在内核态和用户态之间切换；而协程的创建和调度都在用户态，不需要和内核态进行交互。所以这就注定创建和维持协程运行所牺牲的性能，要远小于进程和线程。另外，协程都是以一组的形态存在于一个特定的线程内，那么对于数据的共享，不必使用互斥锁或者条件变量，来保证互斥和同步，应用程序">
+<meta property="og:type" content="article">
+<meta property="og:title" content="云风版协程库源代码分析">
+<meta property="og:url" content="http://example.com/posts/0af9c6f8e8d678cc1ae542e0eee1e9d2.html">
+<meta property="og:site_name" content="PagePaper">
+<meta property="og:description" content="我们知道一个程序可以包含多个进程，每个进程中可以创建多个线程，在线程中又可以创建成千上万甚至更多个协程。进程和线程的创建以及调度需要在内核态和用户态之间切换；而协程的创建和调度都在用户态，不需要和内核态进行交互。所以这就注定创建和维持协程运行所牺牲的性能，要远小于进程和线程。另外，协程都是以一组的形态存在于一个特定的线程内，那么对于数据的共享，不必使用互斥锁或者条件变量，来保证互斥和同步，应用程序">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/0af9c6f8e8d678cc1ae542e0eee1e9d2/1.jpg">
+<meta property="og:image" content="http://example.com/images/0af9c6f8e8d678cc1ae542e0eee1e9d2/2.jpg">
+<meta property="article:published_time" content="2020-04-09T07:17:00.000Z">
+<meta property="article:modified_time" content="2020-04-10T08:17:00.000Z">
+<meta property="article:author" content="PagePaper">
+<meta property="article:tag" content="协程">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/0af9c6f8e8d678cc1ae542e0eee1e9d2/1.jpg">
+
+<link rel="canonical" href="http://example.com/posts/0af9c6f8e8d678cc1ae542e0eee1e9d2.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>云风版协程库源代码分析 | PagePaper</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PagePaper</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/posts/0af9c6f8e8d678cc1ae542e0eee1e9d2.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/logo/header.jpeg">
+      <meta itemprop="name" content="PagePaper">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PagePaper">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          云风版协程库源代码分析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-04-09 15:17:00" itemprop="dateCreated datePublished" datetime="2020-04-09T15:17:00+08:00">2020-04-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-10 16:17:00" itemprop="dateModified" datetime="2020-04-10T16:17:00+08:00">2020-04-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BC%96%E7%A8%8B%E5%BC%80%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">编程开发</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>我们知道一个程序可以包含多个进程，每个进程中可以创建多个线程，在线程中又可以创建成千上万甚至更多个协程。进程和线程的创建以及调度需要在内核态和用户态之间切换；而协程的创建和调度都在用户态，不需要和内核态进行交互。所以这就注定创建和维持协程运行所牺牲的性能，要远小于进程和线程。另外，协程都是以一组的形态存在于一个特定的线程内，那么对于数据的共享，不必使用互斥锁或者条件变量，来保证互斥和同步，应用程序性能上也有了很大的提升。这就是我们使用协程的原因。</p>
+<p>协程适用于IO密集型，而不适用于计算密集型的程序。对于IO密集型程序，无论是读取socket还是硬盘，这些操作基本上都是阻塞式调用，当协程遇到阻塞时，当前协程显式或者隐式主动放弃控制权，保存当前协程的硬件上下文和栈，然后调度器切换到其他就绪的协程继续执行，而当阻塞IO完成后，调度器获得通知，恢复原来协程的硬件上下文以及栈，再切换回来运行。而对于计算密集型的程序，当前协程除非显式切换协程或者设置定时器，由定时器主动引起切换，否则通常不会主动放弃控制权，其他协程可能会一直等待调度，得不到运行。</p>
+<p>一组协程运行在一个线程内，它们是串行运行的，而非并行，即是运行在一个CPU核上，那么协程就无法利用多核CPU资源。如果我们既想使用协程，又想利用多核CPU，一般我们就采用”多进程+协程“的方式。</p>
+<p>目前网上有很多协程的实现例子，本文主要分析云风的协程库，来探究协程的实现原理。大家也可以直接看协程库的<a target="_blank" rel="noopener" href="https://github.com/annocode/coroutine">注释版</a>。</p>
+<span id="more"></span>
+
+<h2 id="协程库的实现方式"><a href="#协程库的实现方式" class="headerlink" title="协程库的实现方式"></a>协程库的实现方式</h2><p>总体来说，目前有如下几种方式来实现协程库。<br>第一种：利用ucontext函数族来切换运行时上下文。比如<a target="_blank" rel="noopener" href="https://blog.codingnow.com/2012/07/c_coroutine.html">云风</a>的<a target="_blank" rel="noopener" href="https://github.com/cloudwu/coroutine/">协程库</a>。<br>第二种：利用汇编语言来切换运行时上下文。比如微信的<a target="_blank" rel="noopener" href="https://github.com/Tencent/Libco">libco</a>。<br>第三种：利用C语言语法switch-case来实现切换运行时上下文。比如<a target="_blank" rel="noopener" href="http://dunkels.com/adam/pt/">Protothreads</a>；<br>第四种：利用C语言的setjmp和longjmp。</p>
+<p>云风版协程库简单来说，核心就是使用ucontext函数族不停的切换当前线程的运行时上下文，导致切换到不同的协程函数中去，以达到在同一个线程内切换协程的目的。无论协程怎么切换，不会引起所属线程的切换。</p>
+<h2 id="ucontext函数族说明"><a href="#ucontext函数族说明" class="headerlink" title="ucontext函数族说明"></a>ucontext函数族说明</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;ucontext.h&gt;</span></span></span><br><span class="line">  </span><br><span class="line"><span class="type">int</span>  <span class="title function_">getcontext</span><span class="params">(<span class="type">ucontext_t</span> *ucp)</span>;</span><br><span class="line"><span class="type">int</span>  <span class="title function_">setcontext</span><span class="params">(<span class="type">const</span> <span class="type">ucontext_t</span> *ucp)</span>;</span><br><span class="line"><span class="type">void</span> <span class="title function_">makecontext</span><span class="params">(<span class="type">ucontext_t</span> *ucp, <span class="type">void</span> (*func)(), <span class="type">int</span> argc, ...)</span>;</span><br><span class="line"><span class="type">int</span>  <span class="title function_">swapcontext</span><span class="params">(<span class="type">ucontext_t</span> *oucp, <span class="type">ucontext_t</span> *ucp)</span>;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span>  <span class="title function_">getcontext</span><span class="params">(<span class="type">ucontext_t</span> *ucp)</span>;</span><br></pre></td></tr></table></figure>
+<p>该函数获取当前运行时上下文，将其保存到ucp中。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span>  <span class="title function_">setcontext</span><span class="params">(<span class="type">const</span> <span class="type">ucontext_t</span> *ucp)</span>;</span><br></pre></td></tr></table></figure>
+<p>设置当前运行时上下文为ucp。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">makecontext</span><span class="params">(<span class="type">ucontext_t</span> *ucp, <span class="type">void</span> (*func)(), <span class="type">int</span> argc, ...)</span>;</span><br></pre></td></tr></table></figure>
+<p>该函数的作用是修改一个用getcontext()获取的ucontext_t实例，也就是说ucp是在调用makecontext之前由getcontext初始化过的值。如果从字面上理解，觉得makecontext可以新建一个ucontext_t，但实际它仅做修改，所以它叫updatecontext显然更加合适。makecontext用参数func指针和argc，以及后续的可变参数，来修改ucp。当这个ucp被setcontext或者swapcontext之后，执行流跳转到func指向的新函数中去。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span>  <span class="title function_">swapcontext</span><span class="params">(<span class="type">ucontext_t</span> *oucp, <span class="type">ucontext_t</span> *ucp)</span>;</span><br></pre></td></tr></table></figure>
+<p>该函数将当前的运行时上下文保存到oucp中，然后切换到ucp所指向的上下文。</p>
+<br/>
+
+<p>这4个函数都用到了ucontext_t结构体，它用来保存运行时上下文，包括运行时各个寄存器的值、运行时栈、信号等等数据。它大致的结构为：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">ucontext</span> </span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">ucontext</span> *<span class="title">uc_link</span>;</span></span><br><span class="line">    <span class="type">sigset_t</span>         uc_sigmask;</span><br><span class="line">    <span class="type">stack_t</span>          uc_stack;</span><br><span class="line">    <span class="type">mcontext_t</span>       uc_mcontext;</span><br><span class="line">    ...</span><br><span class="line">&#125; <span class="type">ucontext_t</span>;</span><br></pre></td></tr></table></figure>
+<p>其中：<br><strong>uc_link</strong> ：当前上下文运行结束时，系统恢复到uc_link指向的上下文；如果该值为NULL，则线程退出；<br><strong>uc_stack</strong> ：当前上下文中使用的栈；<br><strong>uc_sigmask</strong> ：当前上下文中的阻塞信号集；<br><strong>uc_mcontext</strong>：保存的上下文的特定机器数据，包括调用线程的特定寄存器等；</p>
+<h2 id="云风版协程库的实现原理"><a href="#云风版协程库的实现原理" class="headerlink" title="云风版协程库的实现原理"></a>云风版协程库的实现原理</h2><p>首先我们看下该协程协程库中的协程的状态切换图，图中表明了几个重要的函数：</p>
+<p><img src="/images/0af9c6f8e8d678cc1ae542e0eee1e9d2/1.jpg"></p>
+<p>由上述状态图，我们可以知道云风版协程库的使用方法：</p>
+<ul>
+<li><strong>第一步：</strong><br>用户在主协程中调用coroutine_new来创建一个子协程，新建协程的状态为COROUTINE_READY，表示协程就绪，等待调度。</li>
+<li><strong>第二步：</strong><br>在合适的时机，用户在主协程中显式调用coroutine_resume()，将某个新建协程投入运行。<br>此时的coroutine_resume将协程状态由COROUTINE_READY转为COROUTINE_RUNNING，函数会相继调用getcontext、makecontext、swapcontext，分别完成获取当前上下文、制作新上下文、从主协程切换到子协程这三个动作。调用swapcontext之后，当前线程的控制权交给子协程。<br>任一时刻，在一个线程内只有一个协程在运行，其他协程要么是就绪态，要么是挂起态。</li>
+<li><strong>第三步：</strong><br>在子协程中，用户显式调用coroutine_yeild()放弃控制权。<br>此时的coroutine_yeild将协程状态由COROUTINE_RUNNING转为COROUTINE_SUSPEND状态，函数会保存当前子协程的上下文和运行时栈，然后调用swapcontext从子协程切换回主协程。调用swapcontext之后，当前线程的控制权又回到主协程。</li>
+<li><strong>第四步：</strong><br>控制权切回主协程之后，如果有<br>新建的子协程，根据“第二”步的描述将其投入运行；</li>
+<li><strong>第五步：</strong><br>控制权切回主协程之后，如果有COROUTINE_SUSPEND状态的协程，主协程根据调度算法再次调用coroutine_resume()将其投入运行。<br>此时的coroutine_resume将协程状态由COROUTINE_SUSPEND转为COROUTINE_RUNNING，函数会先恢复子协程的运行时栈，然后调用swapcontext从主协程切换到子协程。当前线程的控制权移交给子协程。</li>
+<li><strong>第六步：</strong><br>如果子协程的函数体运行完毕退出，再次切回主协程。恢复主协程的硬件上下文和运行时栈，执行调度子程序，或者在所有子程序都结束的情况下，主协程也退出。</li>
+</ul>
+<p>参照上述描述，我们看下云风的示例程序：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;coroutine.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">args</span> </span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    <span class="type">int</span> n;</span><br><span class="line">&#125;;</span><br><span class="line"> </span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">foo</span><span class="params">(<span class="keyword">struct</span> schedule * S, <span class="type">void</span> *ud)</span> </span><br><span class="line">&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">args</span> * <span class="title">arg</span> =</span> ud;</span><br><span class="line">    <span class="type">int</span> start = arg-&gt;n;</span><br><span class="line">    <span class="type">int</span> i;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; <span class="number">5</span>; i++) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;coroutine %d : %d\n&quot;</span>,coroutine_running(S) , start + i);</span><br><span class="line">        coroutine_yield(S); <span class="comment">// 切出当前协程</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">test</span><span class="params">(<span class="keyword">struct</span> schedule *S)</span> </span><br><span class="line">&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">args</span> <span class="title">arg1</span> =</span> &#123; <span class="number">0</span> &#125;;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">args</span> <span class="title">arg2</span> =</span> &#123; <span class="number">100</span> &#125;;</span><br><span class="line"> </span><br><span class="line">    <span class="type">int</span> co1 = coroutine_new(S, foo, &amp;arg1); <span class="comment">// 创建协程</span></span><br><span class="line">    <span class="type">int</span> co2 = coroutine_new(S, foo, &amp;arg2); <span class="comment">// 创建协程</span></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;main start\n&quot;</span>);</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">while</span> (coroutine_status(S,co1) &amp;&amp; coroutine_status(S,co2)) </span><br><span class="line">    &#123;</span><br><span class="line">        coroutine_resume(S, co1);   <span class="comment">// 恢复协程1的运行</span></span><br><span class="line">        coroutine_resume(S, co2);   <span class="comment">// 恢复协程2的运行</span></span><br><span class="line">    &#125; </span><br><span class="line"> </span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;main end\n&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> </span><br><span class="line">&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">schedule</span> * <span class="title">S</span> =</span> coroutine_open(); <span class="comment">// 创建一个调度器，用来管理所有子协程</span></span><br><span class="line">     </span><br><span class="line">    test(S);</span><br><span class="line"> </span><br><span class="line">    coroutine_close(S); <span class="comment">// 关闭调度器</span></span><br><span class="line"> </span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="struct-schedule协程调度器"><a href="#struct-schedule协程调度器" class="headerlink" title="struct schedule协程调度器"></a>struct schedule协程调度器</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> STACK_SIZE        (1024*1024)   <span class="comment">// 默认的协程运行时栈大小</span></span></span><br><span class="line"> </span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">coroutine</span>;</span></span><br><span class="line"> </span><br><span class="line"><span class="comment">// 调度器结构体</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">schedule</span> </span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    <span class="type">char</span>        <span class="built_in">stack</span>[STACK_SIZE];  <span class="comment">// 协程运行时栈（被所有协程共享）</span></span><br><span class="line">    <span class="type">ucontext_t</span>  main;               <span class="comment">// 主协程的上下文</span></span><br><span class="line">    <span class="type">int</span>         nco;                <span class="comment">// 当前存活的协程数量</span></span><br><span class="line">    <span class="type">int</span>         cap;                <span class="comment">// 调度器中的协程容器的最大容量。后期可以根据需要进行扩容。</span></span><br><span class="line">    <span class="type">int</span>         running;            <span class="comment">// 当前正在运行的协程ID</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">coroutine</span> **<span class="title">co</span>;</span>          <span class="comment">// 调度器中的协程容器</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>其中ucontext_t main用来保存主协程的上下文，看全部源代码，它在两个地方被保存。</p>
+<ul>
+<li>第一次是在coroutine_resume函数中，将协程从COROUTINE_READY转为COROUTINE_RUNNING。参考源代码corontine.c中第167行。</li>
+<li>第二次也是在coroutine_resume函数中，将状态从COROUTINE_SUSPEND转为COROUTINE_RUNNING。参考源代码corontine.c中第174行。<br>这两次均是调用swapcontext来保存主协程的上下文到main中。</li>
+</ul>
+<p>其中char stack[STACK_SIZE]用来做所有子协程的运行时栈，看全部代码，它在一个地方被保存，一个地方被恢复。</p>
+<ul>
+<li>被保存的地方是在coroutine_yield函数中，在从子协程切换到主协程之前，再次调用_save_stack将当前的运行时栈保存到协程结构体中的栈缓存中。参考源代码corontine.c中第204行。</li>
+<li>被恢复的地方是在coroutine_resume函数中，将状态从COROUTINE_SUSPEND转为COROUTINE_RUNNING时。他将栈内容从协程结构体中的栈缓存，拷贝到S-&gt;stack中，我们知道S-&gt;stack被所有子协程用作运行时栈。参考源代码corontine.c中第171行。</li>
+</ul>
+<h3 id="struct-coroutine协程结构体"><a href="#struct-coroutine协程结构体" class="headerlink" title="struct coroutine协程结构体"></a>struct coroutine协程结构体</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 协程结构体</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">coroutine</span> </span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    coroutine_func    func;         <span class="comment">// 协程所运行的函数</span></span><br><span class="line">    <span class="type">void</span>            * ud;           <span class="comment">// 协程参数</span></span><br><span class="line">    <span class="type">ucontext_t</span>        ctx;          <span class="comment">// 当前协程的上下文</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">schedule</span> * <span class="title">sch</span>;</span>          <span class="comment">// 当前协程所属的调度器</span></span><br><span class="line">    <span class="type">ptrdiff_t</span>         cap;          <span class="comment">// 当前栈缓存的最大容量</span></span><br><span class="line">    <span class="type">ptrdiff_t</span>         size;         <span class="comment">// 当前栈缓存的大小</span></span><br><span class="line">    <span class="type">int</span>               status;       <span class="comment">// 当前协程的运行状态（即：COROUTINE_&#123;DEAD,READY,RUNNING,SUSPEND&#125;这四种状态其一）</span></span><br><span class="line">    <span class="type">char</span>            * <span class="built_in">stack</span>;        <span class="comment">// 当前协程切出时保存下来的运行时栈</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>其中coroutine_func func是子协程真实运行的函数体，在此函数中完成业务主逻辑。实际上子协程先进入mainfunc这个函数，在这个函数再调用func进入真实函数。参考源代码corontine.c中第166行。</p>
+<p>其中ucontext_t ctx是当前子协程的运行时上下文，看全部源代码它在一个地方被保存，在两个地方被恢复。</p>
+<ul>
+<li>被保存的地方是在coroutine_yield函数中，保存完当前子协程的栈后，调用swapcontext保存当前子协程的运行时上下文到ctx中，然后恢复主协程的上下文。参考源代码roroutine.c中第207行。</li>
+<li>被恢复的地方都是在coroutine_resume函数中，参考源代码coroutine.c中的第167、174行。</li>
+</ul>
+<h3 id="协程的恢复coroutine-resume"><a href="#协程的恢复coroutine-resume" class="headerlink" title="协程的恢复coroutine_resume"></a>协程的恢复coroutine_resume</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">coroutine_resume</span><span class="params">(<span class="keyword">struct</span> schedule * S, <span class="type">int</span> id)</span> </span><br><span class="line">&#123;</span><br><span class="line">    assert(S-&gt;running == <span class="number">-1</span>);</span><br><span class="line">    assert(id &gt;=<span class="number">0</span> &amp;&amp; id &lt; S-&gt;cap);</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">coroutine</span> *<span class="title">C</span> =</span> S-&gt;co[id];</span><br><span class="line">    <span class="keyword">if</span> (C == <span class="literal">NULL</span>)</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line"> </span><br><span class="line">    <span class="type">int</span> status = C-&gt;status;</span><br><span class="line">    <span class="keyword">switch</span>(status) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">case</span> COROUTINE_READY:</span><br><span class="line">            getcontext(&amp;C-&gt;ctx);                  <span class="comment">// 初始化结构体，将当前的上下文放到C-&gt;ctx中</span></span><br><span class="line">            C-&gt;ctx.uc_stack.ss_sp   = S-&gt;<span class="built_in">stack</span>;   <span class="comment">// 设置当前协程的运行时栈顶，每个协程都共享S-&gt;stack</span></span><br><span class="line">            C-&gt;ctx.uc_stack.ss_size = STACK_SIZE; <span class="comment">// 设置当前协程的运行时栈大小</span></span><br><span class="line">            C-&gt;ctx.uc_link          = &amp;S-&gt;main;   <span class="comment">// 设置后继上下文，协程运行完毕后，切换到S-&gt;main指向的上下文中运行</span></span><br><span class="line">                                                  <span class="comment">// 如果该值设置为NULL，那么协程运行完毕后，整个程序退出</span></span><br><span class="line">            C-&gt;status               = COROUTINE_RUNNING; <span class="comment">// 设置当前协程状态为运行中</span></span><br><span class="line">            S-&gt;running              = id;                <span class="comment">// 设置当前运行协程的ID</span></span><br><span class="line">             </span><br><span class="line">            <span class="type">uintptr_t</span> ptr           = (<span class="type">uintptr_t</span>)S;</span><br><span class="line"> </span><br><span class="line">            <span class="comment">// 设置当待运行协程的运行函数体，以及所需参数</span></span><br><span class="line">            makecontext(&amp;C-&gt;ctx, (<span class="type">void</span> (*)(<span class="type">void</span>))mainfunc, <span class="number">2</span>, (<span class="type">uint32_t</span>)ptr, (<span class="type">uint32_t</span>)(ptr&gt;&gt;<span class="number">32</span>));</span><br><span class="line">            swapcontext(&amp;S-&gt;main, &amp;C-&gt;ctx); <span class="comment">// 将当前上下文放到S-&gt;main中，再将C-&gt;ctx设置为当前的上下文</span></span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> COROUTINE_SUSPEND:</span><br><span class="line">            <span class="comment">// 将原来保存的栈数据，拷贝到当前运行时栈中，恢复原运行时栈</span></span><br><span class="line">            <span class="built_in">memcpy</span>(S-&gt;<span class="built_in">stack</span> + STACK_SIZE - C-&gt;size, C-&gt;<span class="built_in">stack</span>, C-&gt;size);</span><br><span class="line">            S-&gt;running = id;</span><br><span class="line">            C-&gt;status  = COROUTINE_RUNNING;</span><br><span class="line">            swapcontext(&amp;S-&gt;main, &amp;C-&gt;ctx);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            assert(<span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="协程的切出coroutine-yield"><a href="#协程的切出coroutine-yield" class="headerlink" title="协程的切出coroutine_yield"></a>协程的切出coroutine_yield</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> _save_stack(<span class="keyword">struct</span> coroutine *C, <span class="type">char</span> *top) </span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">char</span> dummy = <span class="number">0</span>;</span><br><span class="line">    assert(top - &amp;dummy &lt;= STACK_SIZE);</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// top - &amp;dummy表示当前协程所用的运行时栈的大小</span></span><br><span class="line">    <span class="keyword">if</span> (C-&gt;cap &lt; top - &amp;dummy) <span class="comment">// 如果协程结构体中栈空间小于所需空间大小，则重新分配内存空间</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">free</span>(C-&gt;<span class="built_in">stack</span>);             <span class="comment">// 释放老的栈缓存区</span></span><br><span class="line">        C-&gt;cap = top - &amp;dummy;      <span class="comment">// 设置新的栈缓存区最大容量</span></span><br><span class="line">        C-&gt;<span class="built_in">stack</span> = <span class="built_in">malloc</span>(C-&gt;cap);  <span class="comment">// 重新分配栈缓存区</span></span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    C-&gt;size = top - &amp;dummy; <span class="comment">// 设置新的栈缓存区大小</span></span><br><span class="line">    <span class="built_in">memcpy</span>(C-&gt;<span class="built_in">stack</span>, &amp;dummy, C-&gt;size); <span class="comment">// 将当前的运行时栈的数据，保存到协程中的数据缓存区中</span></span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="type">void</span> <span class="title function_">coroutine_yield</span><span class="params">(<span class="keyword">struct</span> schedule * S)</span> </span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int</span> id = S-&gt;running;    <span class="comment">// 获得当前运行协程的id</span></span><br><span class="line">    assert(id &gt;= <span class="number">0</span>);</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">coroutine</span> * <span class="title">C</span> =</span> S-&gt;co[id];</span><br><span class="line">    assert((<span class="type">char</span> *)&amp;C &gt; S-&gt;<span class="built_in">stack</span>);</span><br><span class="line">    _save_stack(C, S-&gt;<span class="built_in">stack</span> + STACK_SIZE);  <span class="comment">// 保存当前子协程的运行时栈，到协程私有栈缓存中</span></span><br><span class="line">    C-&gt;status = COROUTINE_SUSPEND;  <span class="comment">// 设置为挂起状态</span></span><br><span class="line">    S-&gt;running = <span class="number">-1</span>;</span><br><span class="line">    swapcontext(&amp;C-&gt;ctx , &amp;S-&gt;main); <span class="comment">// 将当前运行时栈保存到ctx中，并且切换到S-&gt;main所指向的上下文中</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>显而易见，在coroutine_yield函数中有个关键步骤就是保存当前运行时栈，它调用_save_stack来完成。接下来我们看下_save_stack的实现原理。要保存下当前运行时栈，我们首先需要知道当前子协程用了多少栈空间。然后根据栈空间来开辟当前子协程中的私有栈缓存，也就是struct coroutine结构体中char * stack数据域。我们知道栈空间是由高地址向下使用的，在makecontext设置栈信息时，我们将最大栈顶设置为S-&gt;stack，那么其栈底为S-&gt;Stack+ STACK_SIZE。在_save_stack中，我们先在栈中申明一个char类型的dummy，则dummy表示当前已使用栈空间的栈顶为(char *)&amp;dummy。由此我们可以得出已使用栈空间大小，既可以精确的分配空间，而不至于在每个协程结构体中开辟一个STACK_SIZE大小的缓存区，从而节省了空间。</p>
+<p><img src="/images/0af9c6f8e8d678cc1ae542e0eee1e9d2/2.jpg"></p>
+<h3 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h3><p>1.<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq910894904/article/details/41911175">https://blog.csdn.net/qq910894904/article/details/41911175</a><br>2.<a target="_blank" rel="noopener" href="https://github.com/zfengzhen/Blog/blob/master/article/ucontext%E7%B0%87%E5%87%BD%E6%95%B0%E5%AD%A6%E4%B9%A0.md">https://github.com/zfengzhen/Blog/blob/master/article/ucontext簇函数学习.md</a><br>3.<a target="_blank" rel="noopener" href="http://www.ilovecpp.com/2018/12/19/coroutine/">http://www.ilovecpp.com/2018/12/19/coroutine/</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%8D%8F%E7%A8%8B/" rel="tag"># 协程</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/posts/8ab057b83c644a0771f3a1b81597a11b.html" rel="prev" title="Linux编程的信号机制">
+      <i class="fa fa-chevron-left"></i> Linux编程的信号机制
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/posts/6f873326a47848b2b3cc51063fdb5489.html" rel="next" title="Windows11以管理员身份运行cmd">
+      Windows11以管理员身份运行cmd <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%8F%E7%A8%8B%E5%BA%93%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F"><span class="nav-number">1.</span> <span class="nav-text">协程库的实现方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ucontext%E5%87%BD%E6%95%B0%E6%97%8F%E8%AF%B4%E6%98%8E"><span class="nav-number">2.</span> <span class="nav-text">ucontext函数族说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%91%E9%A3%8E%E7%89%88%E5%8D%8F%E7%A8%8B%E5%BA%93%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="nav-number">3.</span> <span class="nav-text">云风版协程库的实现原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#struct-schedule%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E5%99%A8"><span class="nav-number">3.1.</span> <span class="nav-text">struct schedule协程调度器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#struct-coroutine%E5%8D%8F%E7%A8%8B%E7%BB%93%E6%9E%84%E4%BD%93"><span class="nav-number">3.2.</span> <span class="nav-text">struct coroutine协程结构体</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8D%8F%E7%A8%8B%E7%9A%84%E6%81%A2%E5%A4%8Dcoroutine-resume"><span class="nav-number">3.3.</span> <span class="nav-text">协程的恢复coroutine_resume</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8D%8F%E7%A8%8B%E7%9A%84%E5%88%87%E5%87%BAcoroutine-yield"><span class="nav-number">3.4.</span> <span class="nav-text">协程的切出coroutine_yield</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E6%A1%A3"><span class="nav-number">3.5.</span> <span class="nav-text">参考文档</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PagePaper"
+      src="/assets/logo/header.jpeg">
+  <p class="site-author-name" itemprop="name">PagePaper</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/weimake" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;weimake" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:pagepaper@126.com" title="E-Mail → mailto:pagepaper@126.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/motadou" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;motadou" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://plus.google.com/pagepaper" title="Google → https:&#x2F;&#x2F;plus.google.com&#x2F;pagepaper" rel="noopener" target="_blank"><i class="fa fa-fw fa-google"></i>Google</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PagePaper</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

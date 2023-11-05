@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":20,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="C++ Primer的强烈建议强制类型转换关闭或挂起了正常的类型检查。强烈建议避免使用强制类型转换，不依赖类型转换也能写出很好的C++程序。 这个建议在如何看待 reinterpret_cast 的使用时非常重要。此类强制转换总是非常危险的。相似地，使用价格const_cast也总是预示着设计权限。设计合理的系统应不需要使用强制转换抛弃const特性。其他的强制转换，如static_cast和dy">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++标准类型转换">
+<meta property="og:url" content="http://example.com/posts/fb7cd73e06d1c676855e174abb24c2f2.html">
+<meta property="og:site_name" content="PagePaper">
+<meta property="og:description" content="C++ Primer的强烈建议强制类型转换关闭或挂起了正常的类型检查。强烈建议避免使用强制类型转换，不依赖类型转换也能写出很好的C++程序。 这个建议在如何看待 reinterpret_cast 的使用时非常重要。此类强制转换总是非常危险的。相似地，使用价格const_cast也总是预示着设计权限。设计合理的系统应不需要使用强制转换抛弃const特性。其他的强制转换，如static_cast和dy">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2007-07-18T07:45:00.000Z">
+<meta property="article:modified_time" content="2007-07-18T07:45:00.000Z">
+<meta property="article:author" content="PagePaper">
+<meta property="article:tag" content="C++">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/posts/fb7cd73e06d1c676855e174abb24c2f2.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>C++标准类型转换 | PagePaper</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PagePaper</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/posts/fb7cd73e06d1c676855e174abb24c2f2.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/logo/header.jpeg">
+      <meta itemprop="name" content="PagePaper">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PagePaper">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          C++标准类型转换
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2007-07-18 15:45:00" itemprop="dateCreated datePublished" datetime="2007-07-18T15:45:00+08:00">2007-07-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C++</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="C-Primer的强烈建议"><a href="#C-Primer的强烈建议" class="headerlink" title="C++ Primer的强烈建议"></a>C++ Primer的强烈建议</h2><p>强制类型转换关闭或挂起了正常的类型检查。强烈建议避免使用强制类型转换，不依赖类型转换也能写出很好的C++程序。</p>
+<p>这个建议在如何看待 reinterpret_cast 的使用时非常重要。此类强制转换总是非常危险的。相似地，使用价格const_cast也总是预示着设计权限。设计合理的系统应不需要使用强制转换抛弃const特性。其他的强制转换，如static_cast和dynamic_cast，各有各的用途，但都不应频繁使用。每次使用强制转换前，程序员应该仔细考虑是否还有其他不同的方法可以达到同一目的。如果非强制转换不可，则应限制强制转换值的作用域，并且记录所有假定涉及的类型，这样能减少错误发生的机会。</p>
+<span id="more"></span>
+
+<h2 id="const-cast-expression"><a href="#const-cast-expression" class="headerlink" title="const_cast&lt;type&gt;(expression)"></a>const_cast&lt;type&gt;(expression)</h2><p>该运算符将转换掉expression的const属性。</p>
+<p>通过下面的代码段展示const_cast的使用场景：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">print</span><span class="params">(<span class="type">char</span> * s)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;%s\n&quot;</span>, s);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">std::string s = <span class="string">&quot;motadou.cnblogs.com&quot;</span>;</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(s.<span class="built_in">c_str</span>()); <span class="comment">//编译失败，因为s.c_str()结果为const *，与print函数的类型不匹配。</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">const_cast</span>&lt;<span class="type">char</span> *&gt;(s.<span class="built_in">c_str</span>()); <span class="comment">//成功</span></span><br></pre></td></tr></table></figure>
+<p>使用const_cast需要注意的问题：<br>该类型转换符除了添加或删除const属性外，执行其他任何类型转换，都会引起编译错误。</p>
+<h2 id="static-cast-expression"><a href="#static-cast-expression" class="headerlink" title="static_cast&lt;type-id&gt;(expression)"></a>static_cast&lt;type-id&gt;(expression)</h2><p>该运算符把expression转换为type-id类型，但没有运行时类型检查来保证转换的安全性。它主要有如下几种用法：</p>
+<ul>
+<li>(1)基类和子类之间指针或引用的转换<blockquote>
+<p>上行转换(子类指针或引用–&gt;基类指针或引用)是安全的，类型不匹配时编译报错；<br>下行转换(基类指针或引用–&gt;子类指针或引用)时，由于没有动态类型检查，所以是不安全的。建议使用dynamic_cast。</p>
+</blockquote>
+</li>
+<li>(2)基本数据类型之间的转换<br>如把int转换成char，把int转换成enum。这种转换的安全性也要开发人员来保证。</li>
+<li>(3)把void *指针转换成目标类型的指针</li>
+<li>(4)把任何类型的指针转换成void *类型</li>
+</ul>
+<p>使用static_cast需要注意如下几个问题：<br>(1)所谓下行转换的不安全性，指的是如果类CA、CB均继承自CBase，用个基类指针表示CA<em>指针，然后使用static_cast将该基类指针转换为CB</em>指针，直接使用这个CB*指针访问类CB内的数据成员将存在风险。比如：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">CBase</span>&#123;&#125;;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">CA</span> : <span class="keyword">public</span> CBase</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="function"><span class="type">void</span> <span class="title">print</span><span class="params">()</span></span>&#123; std::cout &lt;&lt; <span class="string">&quot;==CA::print==&quot;</span> &lt;&lt; std::endl; &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">CB</span> : <span class="keyword">public</span> CBase</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="function"><span class="type">void</span> <span class="title">print</span><span class="params">()</span></span>&#123; std::cout &lt;&lt; <span class="string">&quot;==CB::print==&quot;</span> &lt;&lt; psz_name &lt;&lt; std::endl; &#125;</span><br><span class="line">	<span class="type">char</span> * psz_name;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	CBase * pa = <span class="keyword">new</span> <span class="built_in">CA</span>();</span><br><span class="line">	CB * pb = <span class="built_in">static_cast</span>(pa);</span><br><span class="line">	pb-&gt;<span class="built_in">print</span>();</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上述代码能够顺利的通过编译，真正执行程序时会发生什么？使用指针pb调用CB::print，由于CB的psz_name并没有分配空间，事实上是个野指针，非法访问野指针肯定导致程序coredump。</p>
+<p>(2)static_cast不能转换无关类型（非基类和子类）的指针。比如：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">char</span> c_menu = <span class="string">&#x27;c&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>&#x2F;&#x2F;下面的类型转换错误，编译提示：invalid static_cast from type ‘char*’ to type ‘signed char*’</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">signed</span> <span class="type">char</span> * psc_menu = <span class="built_in">static_cast</span>&lt;<span class="type">signed</span> <span class="type">char</span> *&gt;(&amp;c_menu);</span><br></pre></td></tr></table></figure>
+<p>char *和signed char *不是同一类型的指针，static_cast无法转换故编译报错。</p>
+<p>(3)static_cast不能转换掉expression的const、volatile、__unaligned属性。</p>
+<h2 id="dynamic-cast-expression"><a href="#dynamic-cast-expression" class="headerlink" title="dynamic_cast&lt;type-id&gt;(expression)"></a>dynamic_cast&lt;type-id&gt;(expression)</h2><p>该运算符把expression转换为type-id类型，转换时进行类型检查来保证转换的安全性。它主要有如下几种用法：<br>(1)将基类类型对象的引用或指针安全地转换为同一继承层次中其他类型的引用或指针。转换时进行类型检查，如果发现绑定到引用或者指针的对象不是目标类型的对象，则转换失败。</p>
+<p>使用dynamic_cast需要注意如下几个问题：</p>
+<blockquote>
+<ul>
+<li>(1)类必须有虚函数，否则编译报错(编译器将提示不含有虚函数)。原因是转换过程中需要运行时类型信息，该信息存储在类的虚函数表中，只有定义虚函数，类才有虚函数表。</li>
+<li>(2)与dynamic_cast一起使用的指针必须是有效的–它必须为0或者指向一个对象。</li>
+<li>(3)type-id和expression要么同是引用，要么同是指针。</li>
+<li>(4)上行转换，dynamic_cast与static_cast的效果相同。</li>
+<li>(5)下行转换，dynamic_cast进行运行时类型检查，类型符合则成功转换，否则转换失败。失败表现为：转换指针类型时，dynamic_cast返回结果NULL；转换引用类型时，抛出std::bad_cast异常。</li>
+<li>(6)相同基类不同子类之间的交叉转换均为失败，表现与上述相同。</li>
+</ul>
+</blockquote>
+<h2 id="reinterpret-cast-expression"><a href="#reinterpret-cast-expression" class="headerlink" title="reinterpret_cast&lt;type&gt;(expression)"></a>reinterpret_cast&lt;type&gt;(expression)</h2><p>该操作符只进行简单的比特位拷贝，将expression的所有比特位拷贝给type-id一份。可以说仅仅是重新解释了给出的对象的比特模型。<br>该操作符和Ｃ语言的强制转换，最为类似。<br>所谓重新解释比特模型，我们可以这么理解：假设有个指向int类型的指针pint，使用double * pdouble &#x3D; reinterpret_cast&lt;double *&gt;(pint)进行转换。实际只是将pint的4个字节拷贝给pdouble。我们知道pint指向的空间是4个字节，而理论上pdouble应该指向8个字节，但此时pdouble指向的其他4个字节将是非法数据。重新解释比特模型，就是把int值的空间，当做double类型来使用。该操作符相当危险，因此必须谨慎使用。</p>
+<p>使用reinterpret_cast需要注意如下几个问题： </p>
+<blockquote>
+<ul>
+<li>(1)上面提到static_cast不能进行无关类型的转换，reinterpret_cast可以做到，但需注意转换的安全性。 </li>
+<li>(2)reinterpret_cast本质上依赖于机器。为了安全地使用reinterpret_cast，要求程序员完全理解所涉及的数据类型，以及编译器实现强制类型转换的细节。</li>
+</ul>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/C/" rel="tag"># C++</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/posts/d841027d99af00846e5f621b77f1162b.html" rel="prev" title="C++语法之explicit">
+      <i class="fa fa-chevron-left"></i> C++语法之explicit
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/posts/83d668164ccdb07908cc1146d8c6050d.html" rel="next" title="STL之交集、并集、差集">
+      STL之交集、并集、差集 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#C-Primer%E7%9A%84%E5%BC%BA%E7%83%88%E5%BB%BA%E8%AE%AE"><span class="nav-number">1.</span> <span class="nav-text">C++ Primer的强烈建议</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#const-cast-expression"><span class="nav-number">2.</span> <span class="nav-text">const_cast&lt;type&gt;(expression)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#static-cast-expression"><span class="nav-number">3.</span> <span class="nav-text">static_cast&lt;type-id&gt;(expression)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#dynamic-cast-expression"><span class="nav-number">4.</span> <span class="nav-text">dynamic_cast&lt;type-id&gt;(expression)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#reinterpret-cast-expression"><span class="nav-number">5.</span> <span class="nav-text">reinterpret_cast&lt;type&gt;(expression)</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PagePaper"
+      src="/assets/logo/header.jpeg">
+  <p class="site-author-name" itemprop="name">PagePaper</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/weimake" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;weimake" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:pagepaper@126.com" title="E-Mail → mailto:pagepaper@126.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/motadou" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;motadou" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://plus.google.com/pagepaper" title="Google → https:&#x2F;&#x2F;plus.google.com&#x2F;pagepaper" rel="noopener" target="_blank"><i class="fa fa-fw fa-google"></i>Google</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PagePaper</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

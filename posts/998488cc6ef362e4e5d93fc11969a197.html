@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":20,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="昨天看一篇关于libco的博文，里面提到了一个由于全静态链接导致的bug。全静态链接？以前没有接触过这个概念，特意到网上搜了下，原来是一个程序将其依赖的所有动态库都替换成对应静态库，即使是libc.so,libm.so,libstdc++.so这种系统级别的动态库。全静态链接出来的可执行程序，不依赖任何动态库，拷贝到任何一台机器，只需要操作系统，这个程序就可以run起来。 这种全静态链接的方式，肯">
+<meta property="og:type" content="article">
+<meta property="og:title" content="gcc全静态链接">
+<meta property="og:url" content="http://example.com/posts/998488cc6ef362e4e5d93fc11969a197.html">
+<meta property="og:site_name" content="PagePaper">
+<meta property="og:description" content="昨天看一篇关于libco的博文，里面提到了一个由于全静态链接导致的bug。全静态链接？以前没有接触过这个概念，特意到网上搜了下，原来是一个程序将其依赖的所有动态库都替换成对应静态库，即使是libc.so,libm.so,libstdc++.so这种系统级别的动态库。全静态链接出来的可执行程序，不依赖任何动态库，拷贝到任何一台机器，只需要操作系统，这个程序就可以run起来。 这种全静态链接的方式，肯">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/998488cc6ef362e4e5d93fc11969a197/1.png">
+<meta property="og:image" content="http://example.com/images/998488cc6ef362e4e5d93fc11969a197/2.png">
+<meta property="og:image" content="http://example.com/images/998488cc6ef362e4e5d93fc11969a197/3.png">
+<meta property="article:published_time" content="2008-05-01T12:15:58.000Z">
+<meta property="article:modified_time" content="2008-05-01T12:15:58.000Z">
+<meta property="article:author" content="PagePaper">
+<meta property="article:tag" content="GCC">
+<meta property="article:tag" content="工具链">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/998488cc6ef362e4e5d93fc11969a197/1.png">
+
+<link rel="canonical" href="http://example.com/posts/998488cc6ef362e4e5d93fc11969a197.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>gcc全静态链接 | PagePaper</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PagePaper</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/posts/998488cc6ef362e4e5d93fc11969a197.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/logo/header.jpeg">
+      <meta itemprop="name" content="PagePaper">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PagePaper">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          gcc全静态链接
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2008-05-01 20:15:58" itemprop="dateCreated datePublished" datetime="2008-05-01T20:15:58+08:00">2008-05-01</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BC%96%E7%A8%8B%E5%BC%80%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">编程开发</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>昨天看一篇关于libco的博文，里面提到了一个由于全静态链接导致的bug。全静态链接？以前没有接触过这个概念，特意到网上搜了下，原来是一个程序将其依赖的所有动态库都替换成对应静态库，即使是libc.so,libm.so,libstdc++.so这种系统级别的动态库。全静态链接出来的可执行程序，不依赖任何动态库，拷贝到任何一台机器，只需要操作系统，这个程序就可以run起来。</p>
+<p>这种全静态链接的方式，肯定有好有坏。</p>
+<ul>
+<li>第一，缺点：浪费了磁盘空间。全静态链接出来的可执行程序要比动态链接的大。但目前磁盘普遍够大，这个缺点基本可以忽略。</li>
+<li>第二，缺点：浪费了内存空间。我们知道相同的动态库在内存中只存在一份，被多个程序共享。而静态库，是需要全部加载到内存的。所以多多少少要浪费一些内存空间。目前来看，内存仍然是服务器中宝贵的资源，能省一些肯定划算。</li>
+<li>第三，优点：屏蔽了动态库的版本差异。由于静态链接把所有依赖的函数，全部打包进可执行程序，不依赖于特定机器的动态库函数版本。所有分布式部署的程序，其行为一致。</li>
+</ul>
+<p>那全静态链接如何优雅的实现呢？gcc为我们提供了(-static)、(-Wl,-Bstatic)、(-Wl,-Bdynamic)，这么几个选项。</p>
+<span id="more"></span>
+
+<p><strong>第一种用法：使用-static选项，将全部动态库都用静态库替换。</strong><br>这里有个基于boost库的程序，我们使用普通动态链接的方式编译出来，看看可执行程序的依赖关系。<br><img src="/images/998488cc6ef362e4e5d93fc11969a197/1.png">由上图可见，可执行程序依赖于libboost_thread.so.1.72.0、libpthread.so.0、libstdc++.so.6、libc.so.6等等动态库。我们再用-static编译这个程序，再看看可执行程序的依赖关系。</p>
+<p>
+
+<p><img src="/images/998488cc6ef362e4e5d93fc11969a197/2.png">由上图可见，加入-static选项以后，链接器将动态库全部换成了静态库。</p>
+<p><strong>第二种用法：使用-Wl,-Bstatic，-Wl,-Bdynamic选项，将部分动态库设置为静态链接。</strong><br>gcc使用-Wl将参数传递给连接器。链接器使用-Bdynamic强制连接动态库，-Bstatic强制连接静态库。所以部分静态，部分动态连接这么写：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc -Wl,-Bstatic -l&lt;static-lib&gt; -Wl,-Bdynamic -l&lt;dynamic-lib&gt;</span><br></pre></td></tr></table></figure>
+<p>我们还是使用上面的boost.cpp作为例子，本次编译我们将libboost_thread.so.1.72.0用作静态编译，其他系统动态库，任然以动态库的方式进行连接。<br><img src="/images/998488cc6ef362e4e5d93fc11969a197/3.png">由上图可见，libboost_thread.so.1.72.0已经是静态链接，而其他系统库，任然是动态链接。</p>
+<p>参考1：<a target="_blank" rel="noopener" href="https://www.zhihu.com/question/22940048/answer/222625910">https://www.zhihu.com/question/22940048/answer/222625910</a><br>参考2：<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/3f1ec6748655">https://www.jianshu.com/p/3f1ec6748655</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/GCC/" rel="tag"># GCC</a>
+              <a href="/tags/%E5%B7%A5%E5%85%B7%E9%93%BE/" rel="tag"># 工具链</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/posts/de0674deb69068bdaa99dbf80d9eb63d.html" rel="prev" title="让configure和cmake编译时支持调试选项">
+      <i class="fa fa-chevron-left"></i> 让configure和cmake编译时支持调试选项
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/posts/70c2eff34a271c6535445168b4e91867.html" rel="next" title="查看glibc版本号">
+      查看glibc版本号 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PagePaper"
+      src="/assets/logo/header.jpeg">
+  <p class="site-author-name" itemprop="name">PagePaper</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/weimake" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;weimake" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:pagepaper@126.com" title="E-Mail → mailto:pagepaper@126.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/motadou" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;motadou" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://plus.google.com/pagepaper" title="Google → https:&#x2F;&#x2F;plus.google.com&#x2F;pagepaper" rel="noopener" target="_blank"><i class="fa fa-fw fa-google"></i>Google</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PagePaper</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

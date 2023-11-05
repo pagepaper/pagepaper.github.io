@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":20,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="关于pthread条件变量1$ man pthread_cond_init | col -b &gt; pthread_cond.man 得到manual中的描述：  A condition (short for ‘’condition variable’’) is a synchronization device that allows threads to suspend execution">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pthread编程之条件变量">
+<meta property="og:url" content="http://example.com/posts/bd462c634547e829ad2d6c7004a56b6e.html">
+<meta property="og:site_name" content="PagePaper">
+<meta property="og:description" content="关于pthread条件变量1$ man pthread_cond_init | col -b &gt; pthread_cond.man 得到manual中的描述：  A condition (short for ‘’condition variable’’) is a synchronization device that allows threads to suspend execution">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/bd462c634547e829ad2d6c7004a56b6e/1.jpg">
+<meta property="article:published_time" content="2008-01-18T13:01:01.000Z">
+<meta property="article:modified_time" content="2008-01-18T13:01:01.000Z">
+<meta property="article:author" content="PagePaper">
+<meta property="article:tag" content="多线程">
+<meta property="article:tag" content="条件变量">
+<meta property="article:tag" content="PThraed">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/bd462c634547e829ad2d6c7004a56b6e/1.jpg">
+
+<link rel="canonical" href="http://example.com/posts/bd462c634547e829ad2d6c7004a56b6e.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>pthread编程之条件变量 | PagePaper</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PagePaper</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/posts/bd462c634547e829ad2d6c7004a56b6e.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/logo/header.jpeg">
+      <meta itemprop="name" content="PagePaper">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PagePaper">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          pthread编程之条件变量
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2008-01-18 21:01:01" itemprop="dateCreated datePublished" datetime="2008-01-18T21:01:01+08:00">2008-01-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BC%96%E7%A8%8B%E5%BC%80%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">编程开发</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="关于pthread条件变量"><a href="#关于pthread条件变量" class="headerlink" title="关于pthread条件变量"></a>关于pthread条件变量</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ man pthread_cond_init | col -b &gt; pthread_cond.man</span><br></pre></td></tr></table></figure>
+<p>得到manual中的描述：</p>
+<blockquote>
+<p>A condition (short for ‘’condition variable’’) is a synchronization device that allows threads to suspend execution and relinquish the processors until some predicate on shared data is satisfied. The basic operations on conditions are: signal the condition(when the predicate becomes true), and wait for the condition, suspending the thread execution until another thread signals the condition.</p>
+</blockquote>
+<blockquote>
+<p>条件变量是同步线程的一种机制，它允许线程挂起，让出处理器等待其他线程向它发送信号，该线程收到该信号后被唤醒继续执行程序。对条件变量基本的操作就是：a）向条件变量发送信号，唤醒等待的线程；b）等待条件变量并挂起直至其他线程向该条件变量发送信号。为了防止竞争，条件变量总是和一个互斥锁同时使用。</p>
+</blockquote>
+<span id="more"></span>
+
+<h2 id="条件变量相关函数"><a href="#条件变量相关函数" class="headerlink" title="条件变量相关函数"></a>条件变量相关函数</h2><p>phtread条件变量主要有如下的这些函数：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;pthread.h&gt;</span></span></span><br><span class="line"><span class="type">pthread_cond_t</span> cond = PTHREAD_COND_INITIALIZER;</span><br><span class="line"><span class="type">int</span> <span class="title function_">pthread_cond_init</span><span class="params">(<span class="type">pthread_cond_t</span> *cond, <span class="type">pthread_condattr_t</span> *cond_attr)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">pthread_cond_signal</span><span class="params">(<span class="type">pthread_cond_t</span> *cond)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">pthread_cond_broadcast</span><span class="params">(<span class="type">pthread_cond_t</span> *cond)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">pthread_cond_wait</span><span class="params">(<span class="type">pthread_cond_t</span> *cond, <span class="type">pthread_mutex_t</span> *mutex)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">pthread_cond_timedwait</span><span class="params">(<span class="type">pthread_cond_t</span> *cond, <span class="type">pthread_mutex_t</span> *mutex, <span class="type">const</span> <span class="keyword">struct</span> timespec *abstime)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">pthread_cond_destroy</span><span class="params">(<span class="type">pthread_cond_t</span> *cond)</span>;</span><br></pre></td></tr></table></figure>
+<p>返回0为成功，非0为失败。</p>
+<blockquote>
+<p><font color="FF0000">注意：pthread_cond_init,pthread_cond_signal,pthread_cond_broadcast,pthread_cond_wait只返回0，不会返回其他错误码。也就是说这几个函数每次调用都会成功，编程时不用检查返回值。但pthread_cond_timedwait和pthread_cond_destroy会返回错误码，需要注意！</font></p>
+</blockquote>
+<h2 id="条件变量创建"><a href="#条件变量创建" class="headerlink" title="条件变量创建"></a>条件变量创建</h2><p>条件变量的初始化有两种方式：静态和动态方式。<br>1.静态方式<br>初始化方法：pthread_cond_t pcond &#x3D; PTHREAD_COND_INITIALIZER;<br>对于静态分配的条件变量，如果使用默认的条件变量属性，可以直接使用PTHREAD_COND_INITIALIZER对条件变量进行赋值来初始化。pthread_cond_t是一个结构体，同样PTHREAD_COND_INITIALIZER是一个结构体常量。</p>
+<p>2.动态方式<br>动态方式调用pthread_cond_init函数对条件变量初始化，该函数的第二个参数指向条件变量属性的结构体。尽管POSIX标准中为条件变量定义了属性，但在LinuxThreads中没有实现，因此cond_attr值通常设置为NULL。</p>
+<h2 id="条件变量等待"><a href="#条件变量等待" class="headerlink" title="条件变量等待"></a>条件变量等待</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">pthread_cond_wait</span><span class="params">(<span class="type">pthread_cond_t</span> *cond, <span class="type">pthread_mutex_t</span> *mutex)</span>;</span><br></pre></td></tr></table></figure>
+<p>pthread_cond_wait调用相当复杂，它是如下执行序列的一个组合：<br>(1)释放互斥锁 并且 线程挂起（这两个操作是一个原子操作）；<br>(2)线程获得信号，尝试获得互斥锁后被唤醒；</p>
+<p>我们知道调用pthread_cond_signal给条件变量发送信号时，如果当时没有线程在等待这个条件变量，信号将被丢弃。如果”释放互斥锁”和”线程挂起”不是一个原子操作，那么pthread_cond_wait线程在”释放互斥锁”和”线程挂起”之间，如果有信号一旦发生，程序就会错失一次条件变量变化。<br>int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, const struct timespec *abstime)</p>
+<p>返回错误码：ETIMEDOUT。如果在指定时刻前，没有信号发生。<br>返回错误码：EINTR。该函数被信号中断。<br>pthread_cond_timewait是等待条件变量的令一种形式，与前一种的区别是计时等待方式如果在给定时刻前条件没有满足，就返回ETIMEOUT结束等待。该函数在不同情况下会返回特定错误码，编程时请参照开发。</p>
+<h2 id="条件变量触发"><a href="#条件变量触发" class="headerlink" title="条件变量触发"></a>条件变量触发</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">pthread_cond_signal</span><span class="params">(<span class="type">pthread_cond_t</span> *cond)</span>;</span><br></pre></td></tr></table></figure>
+<p>pthread_cond_signal唤醒等待改条件变量所有线程中的一个。如果此时没有线程在等待该条件变量，那么就丢弃该信号，当做什么也没发生。如果有多个线程在等待，精确保证只有一个线程被唤醒。<br>int pthread_cond_broadcast(pthread_cond_t *cond);<br>pthread_cond_broadcast唤醒等待该条件变量所有线程。如果此时没有线程在等待该条件变量，那么就丢弃该信号，当做什么也没发生。</p>
+<h2 id="条件变量销毁"><a href="#条件变量销毁" class="headerlink" title="条件变量销毁"></a>条件变量销毁</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">pthread_cond_destroy</span><span class="params">(<span class="type">pthread_cond_t</span> *cond)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>返回错误码：EBUSY。当前还有线程在该条件变量上等待。<br>pthread_cond_destroy销毁一个条件变量，但只有在没有线程在该条件变量上等待的时候才能销毁，否则返回EBUSY。因为Linux实现的条件变量没有分配什么资源，所以注销动作只包括检查是否有等待线程。</p>
+<h2 id="memcached应用条件变量实例"><a href="#memcached应用条件变量实例" class="headerlink" title="memcached应用条件变量实例"></a>memcached应用条件变量实例</h2><p>背景：memcached是一个多线程结构的程序，主线程负责接收和分发请求，工作者线程实际处理请求。工作者线程在主线程中创建。创建线程后，工作者线程需要完成一些初始化工作，才允许主线程继续执行，所以主线程需要等待这些工作者线程全部初始化完毕。<br>这里就使用到了条件变量，大体的流程是这样的：<br>(1)主线程初始化一个条件变量和一个互斥锁；<br>(2)主线程创建n个工作者线程；<br>(3)主线程调用pthread_mutex_lock锁定互斥锁，然后调用pthread_cond_wait在条件变量上wait，等待被唤醒；<br>(4)子线程执行初始化代码，完毕后获取互斥锁，累加已初始化线程数量，调用pthread_cond_signal给该条件变量发送信号，同时释放互斥锁；<br>(5)线程调度唤醒主线程，主线程检查现在已经初始化的线程数目，如果都初始化了就释放互斥锁，顺序执行其他代码；如果还没初始化完毕，调用pthread_cond_wait再次等待。</p>
+<p>主线程执行如下代码：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*主线程创建nthreads个线程，线程创建后进行初始化，初始化完毕后累加init_count*/</span></span><br><span class="line"><span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; nthreads; i++) </span><br><span class="line">&#123;</span><br><span class="line">	create_worker(worker_libevent, &amp;threads[i]);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/*主线程等待线程全部初始化，条件是已初始化量init_count等于线程数nthreads*/</span></span><br><span class="line">pthread_mutex_lock(&amp;init_lock);</span><br><span class="line"><span class="keyword">while</span> (init_count &lt; nthreads) </span><br><span class="line">&#123;</span><br><span class="line">       	pthread_cond_wait(&amp;init_cond, &amp;init_lock);</span><br><span class="line">&#125;</span><br><span class="line">pthread_mutex_unlock(&amp;init_lock);</span><br></pre></td></tr></table></figure>
+
+<p>工作者线程执行如下代码：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//<span class="doctag">TODO:</span>初始化代码</span></span><br><span class="line">pthread_mutex_lock(&amp;init_lock);</span><br><span class="line">init_count++;	<span class="comment">//累加已初始化线程数量</span></span><br><span class="line">pthread_cond_signal(&amp;init_cond);</span><br><span class="line">pthread_mutex_unlock(&amp;init_lock);</span><br></pre></td></tr></table></figure>
+
+<p>看完这段代码之后，估计都会有一个疑问：流程(3)中互斥锁已被主线程获取了，在线程全部初始化完毕之前，主线程并没有显式释放互斥锁，为什么在流程(4)中工作者线程还能获取到互斥锁呢？在讲解pthread_cond_wait函数时说明过这个问题，也可以从下图看出其中奥妙。</p>
+<p><img src="/images/bd462c634547e829ad2d6c7004a56b6e/1.jpg"></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" rel="tag"># 多线程</a>
+              <a href="/tags/%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8F/" rel="tag"># 条件变量</a>
+              <a href="/tags/PThraed/" rel="tag"># PThraed</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/posts/fffb60d4cfb96748b3e07d9013dab01d.html" rel="prev" title="编译器扩展deprecated">
+      <i class="fa fa-chevron-left"></i> 编译器扩展deprecated
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/posts/de0674deb69068bdaa99dbf80d9eb63d.html" rel="next" title="让configure和cmake编译时支持调试选项">
+      让configure和cmake编译时支持调试选项 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B3%E4%BA%8Epthread%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8F"><span class="nav-number">1.</span> <span class="nav-text">关于pthread条件变量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8F%E7%9B%B8%E5%85%B3%E5%87%BD%E6%95%B0"><span class="nav-number">2.</span> <span class="nav-text">条件变量相关函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8F%E5%88%9B%E5%BB%BA"><span class="nav-number">3.</span> <span class="nav-text">条件变量创建</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8F%E7%AD%89%E5%BE%85"><span class="nav-number">4.</span> <span class="nav-text">条件变量等待</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8F%E8%A7%A6%E5%8F%91"><span class="nav-number">5.</span> <span class="nav-text">条件变量触发</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8F%E9%94%80%E6%AF%81"><span class="nav-number">6.</span> <span class="nav-text">条件变量销毁</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#memcached%E5%BA%94%E7%94%A8%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8F%E5%AE%9E%E4%BE%8B"><span class="nav-number">7.</span> <span class="nav-text">memcached应用条件变量实例</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PagePaper"
+      src="/assets/logo/header.jpeg">
+  <p class="site-author-name" itemprop="name">PagePaper</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/weimake" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;weimake" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:pagepaper@126.com" title="E-Mail → mailto:pagepaper@126.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/motadou" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;motadou" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://plus.google.com/pagepaper" title="Google → https:&#x2F;&#x2F;plus.google.com&#x2F;pagepaper" rel="noopener" target="_blank"><i class="fa fa-fw fa-google"></i>Google</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PagePaper</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

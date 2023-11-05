@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":20,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="导语：C++中用“虚”的来命名的概念，涉及:  虚函数 虚析构函数 纯虚函数 虚基类  本文简要的说明下在面临什么样的问题下使用相应的技术、这些概念又是如何解决问题的。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++语法之虚">
+<meta property="og:url" content="http://example.com/posts/e184ac74b250b5e84824e9e520fb5e8f.html">
+<meta property="og:site_name" content="PagePaper">
+<meta property="og:description" content="导语：C++中用“虚”的来命名的概念，涉及:  虚函数 虚析构函数 纯虚函数 虚基类  本文简要的说明下在面临什么样的问题下使用相应的技术、这些概念又是如何解决问题的。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/e184ac74b250b5e84824e9e520fb5e8f/1.jpg">
+<meta property="og:image" content="http://example.com/images/e184ac74b250b5e84824e9e520fb5e8f/2.jpg">
+<meta property="article:published_time" content="2007-07-13T08:45:00.000Z">
+<meta property="article:modified_time" content="2007-07-13T08:45:00.000Z">
+<meta property="article:author" content="PagePaper">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="虚函数">
+<meta property="article:tag" content="虚析构函数">
+<meta property="article:tag" content="纯虚函数">
+<meta property="article:tag" content="虚基类">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/e184ac74b250b5e84824e9e520fb5e8f/1.jpg">
+
+<link rel="canonical" href="http://example.com/posts/e184ac74b250b5e84824e9e520fb5e8f.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>C++语法之虚 | PagePaper</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PagePaper</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/posts/e184ac74b250b5e84824e9e520fb5e8f.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/logo/header.jpeg">
+      <meta itemprop="name" content="PagePaper">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PagePaper">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          C++语法之虚
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2007-07-13 16:45:00" itemprop="dateCreated datePublished" datetime="2007-07-13T16:45:00+08:00">2007-07-13</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C++</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>导语：C++中用“虚”的来命名的概念，涉及:</p>
+<ul>
+<li><font color="#FF0000">虚函数</font></li>
+<li><font color="#FF0000">虚析构函数</font></li>
+<li><font color="#FF0000">纯虚函数</font></li>
+<li><font color="#FF0000">虚基类</font></li>
+</ul>
+<p>本文简要的说明下在面临什么样的问题下使用相应的技术、这些概念又是如何解决问题的。</p>
+<span id="more"></span>
+
+<h2 id="虚函数"><a href="#虚函数" class="headerlink" title="虚函数"></a>虚函数</h2><p><font color="#E3940B">要解决的问题</font><br>在一般的类继承关系中，当使用基类对象指针指向派生类对象时，通过基类对象的指针引用的是基类中的同名函数，而不是派生类中的同名函数！</p>
+<p><font color="#E3940B">解决方案</font><br>如果需要通过基类的指针指向派生类的对象，并访问某个与基类同名的成员（如果是函数，其原型完全相同），那么首先在基类中将这个同名函数说明为虚函数。<br>虚函数允许派生类取代基类所提供的实现。编译器确保当对象为派生类时，取代者（译注：即派生类的实现）总是被调用，即使对象是使用基类指针访问而不是派生类的指针。这样就允许基类的算法被派生类取代，即使用户不知道派生类的细节。</p>
+<p><font color="#E3940B">虚函数语法规则</font></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">class_name</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="keyword">virtual</span> 函数类型 函数名(形参表)</span><br><span class="line">	&#123;</span><br><span class="line">		.......</span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>virtual关键字来限定成员函数，虚函数声明只能出现在类声明中的函数原型声明中，而不能在成员的函数体实现的时候。</p>
+<p>派生类中可以不显式给出虚函数的声明，系统根据以下规则来判断一个函数成员是不是虚函数：</p>
+<blockquote>
+<ul>
+<li>1.该函数是否与基类的虚函数有相同的名称；</li>
+<li>2.该函数是否与基类的虚函数有相同的参数个数及相同的对应参数类型；</li>
+<li>3.该函数是否与基类的虚函数有相同的返回值或者满足赋值兼容规则的指针、引用型的返回值。</li>
+</ul>
+</blockquote>
+<p>如果从名称、参数及返回值三个方面检查以后，派生类的函数满足了上述条件，就被自动确定为虚函数。</p>
+<p>对虚函数的说明：</p>
+<blockquote>
+<ul>
+<li>1.虚函数仅适用于有继承关系的类对象, 所以只有类的成员函数才能说明为虚函数。</li>
+<li>2.静态成员函数不能是虚函数。</li>
+<li>3.内联函数不能是虚函数。</li>
+<li>4.构造函数不能是虚函数。</li>
+<li>5.析构函数可以是虚函数。</li>
+</ul>
+</blockquote>
+<h2 id="虚析构函数"><a href="#虚析构函数" class="headerlink" title="虚析构函数"></a>虚析构函数</h2><p>在C++中，不能声明虚构造函数，但是可以声明虚析构函数。</p>
+<p>虚析构函数的作用：<br>当你可能通过基类指针删除派生类对象时，如果一个类的析构函数是虚函数，那么，由它派生而来的所有子类的析构函数也是虚函数。析构函数设置为虚函数之后，在使用指针引用时可以动态联编，实现运行时的多态，保证使用基类类型的指针就能够调用适当的析构函数针对不同的对象进行清理工作。</p>
+<h2 id="纯虚函数（抽象类的基础）"><a href="#纯虚函数（抽象类的基础）" class="headerlink" title="纯虚函数（抽象类的基础）"></a>纯虚函数（抽象类的基础）</h2><p><font color="#E3940B">要解决的问题:</font><br>有些函数只需给出其在基类中的声明，不需在其类中进行定义。</p>
+<p><font color="#E3940B">解决方案</font><br>纯虚函数是一个在基类中说明的虚函数，它在该基类中没有定义具体的操作内容，要求各派生类根据实际需要定义自己的实现。</p>
+<p><font color="#E3940B">纯虚函数的语法规则</font></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">class_name</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="keyword">virtual</span> 函数类型 函数名（参数表）= <span class="number">0</span>;</span><br><span class="line">	………</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p><font color="#E3940B">抽象类</font></p>
+<blockquote>
+<ul>
+<li>1.带有纯虚函数的类是抽象类。抽象类的作用是通过它为一个类族建立一个公共的接口，使他们能够有效地发挥多态特性。抽象类只是声明了一族派生类的共同接口，而接口的完整实现，即纯虚函数的函数体，要由派生类自己定义。</li>
+<li>2.如果抽象类的派生类中给出全部纯虚函数的实现，就不再是抽象类；否则仍然是一个抽象类。</li>
+<li>3.抽象类不能实例化，不能声明一个抽象类的对象，但可以声明一个抽象类的指针或引用。通过指向并访问派生类对象。</li>
+</ul>
+</blockquote>
+<h2 id="虚基类-虚拟继承"><a href="#虚基类-虚拟继承" class="headerlink" title="虚基类(虚拟继承)"></a>虚基类(虚拟继承)</h2><p>首先要明确：虚基类并不是带有虚函数的基类。</p>
+<p><font color="#E3940B">面临的问题:</font><br>在不使用虚基类的情况下，如果某个派生类的部分或全部直接基类是从另外一个共同的基类派生而来的，那么在派生类的对象中，这些从共同基类继承的同名数据在内存中拥有多个拷贝，同一函数名会有多个映射。</p>
+<p>我们使用如下这个例子进行分析：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> std;</span><br><span class="line"> 	 </span><br><span class="line"><span class="keyword">class</span> <span class="title class_">B0</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">B0</span>(<span class="type">int</span> a):<span class="built_in">nv</span>(a)&#123;&#125;</span><br><span class="line">    <span class="type">int</span> nv;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">fun</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        cout&lt;&lt;<span class="string">&quot;fun B0&quot;</span> &lt;&lt; endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line">	 </span><br><span class="line"><span class="keyword">class</span> <span class="title class_">B1</span>:<span class="keyword">public</span> B0</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">B1</span>(<span class="type">int</span> a, <span class="type">int</span> b):<span class="built_in">B0</span>(a),<span class="built_in">nv1</span>(b)&#123;&#125;</span><br><span class="line">    <span class="type">int</span> nv1;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">B2</span>:<span class="keyword">public</span> B0</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">B2</span>(<span class="type">int</span> a, <span class="type">int</span> c):<span class="built_in">B0</span>(a),<span class="built_in">nv2</span>(c)&#123;&#125;</span><br><span class="line">    <span class="type">int</span> nv2;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">D1</span>:<span class="keyword">public</span> B1,<span class="keyword">public</span> B2</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">D1</span>(<span class="type">int</span> a, <span class="type">int</span> b, <span class="type">int</span> c, <span class="type">int</span> d):<span class="built_in">B1</span>(a,b),<span class="built_in">B2</span>(a,c),<span class="built_in">nvd</span>(d)&#123;&#125;</span><br><span class="line">    <span class="type">int</span> nvd;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">fund</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        cout &lt;&lt;<span class="string">&quot;fund D1&quot;</span> &lt;&lt; endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"> 	 </span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="function">D1 <span class="title">myd</span><span class="params">(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>)</span></span>;</span><br><span class="line">   </span><br><span class="line">    myd.<span class="built_in">fun</span>();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用g++ -o test test.cpp，编译该程序，报错如下：</p>
+<blockquote>
+<p>g++ -o test test.cpp<br>test.cpp: In function ‘int main()’:<br>test.cpp:44: request for member ‘fun’ is ambiguous<br>test.cpp:10: candidates are: void B0::fun()<br>test.cpp:10:                 void B0::fun()</p>
+</blockquote>
+<p>我们来分析下报错的原因。按照该程序的继承关系，D1继承关系、成员构成及存储分布图如下所示：<br><img src="/images/e184ac74b250b5e84824e9e520fb5e8f/1.jpg"></p>
+<p>由于void fun()包含在B1和B2中，在使用D1的对象调用该函数时，编译器无法进行决议来确定到底该调用哪个类中的void fun()，所以出现编译错误的情况。虽然我们可以使用作用域分辨符进行指定，如使用myd.B1::fun()或者myd.B2::fun()，可以编译通过执行也正确，但这样做仍然浪费了内存空间。为了解决这个问题，我们使用虚拟继承技术将程序改造如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> std;</span><br><span class="line"> 	 </span><br><span class="line"><span class="keyword">class</span> <span class="title class_">B0</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">B0</span>(<span class="type">int</span> a):<span class="built_in">nv</span>(a)&#123;&#125;</span><br><span class="line">    <span class="type">int</span> nv;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">fun</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        cout&lt;&lt;<span class="string">&quot;fun B0&quot;</span> &lt;&lt; endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"> 	 </span><br><span class="line"><span class="keyword">class</span> <span class="title class_">B1</span>:<span class="keyword">virtual</span> <span class="keyword">public</span> B0</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">B1</span>(<span class="type">int</span> a, <span class="type">int</span> b):<span class="built_in">B0</span>(a),<span class="built_in">nv1</span>(b)&#123;&#125;</span><br><span class="line">    <span class="type">int</span> nv1;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">B2</span>:<span class="keyword">virtual</span> <span class="keyword">public</span> B0</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">B2</span>(<span class="type">int</span> a, <span class="type">int</span> c):<span class="built_in">B0</span>(a),<span class="built_in">nv2</span>(c)&#123;&#125;</span><br><span class="line">    <span class="type">int</span> nv2;</span><br><span class="line">&#125;;</span><br><span class="line"> 	 </span><br><span class="line"><span class="keyword">class</span> <span class="title class_">D1</span>:<span class="keyword">public</span> B1,<span class="keyword">public</span> B2</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">D1</span>(<span class="type">int</span> a, <span class="type">int</span> b, <span class="type">int</span> c, <span class="type">int</span> d):<span class="built_in">B0</span>(a),<span class="built_in">B1</span>(a,b),<span class="built_in">B2</span>(a,c),<span class="built_in">nvd</span>(d)&#123;&#125;</span><br><span class="line">    <span class="type">int</span> nvd;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">fund</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        cout &lt;&lt;<span class="string">&quot;fund D1&quot;</span> &lt;&lt; endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line">	 </span><br><span class="line">	 </span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="function">D1 <span class="title">myd</span><span class="params">(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>)</span></span>;</span><br><span class="line">    </span><br><span class="line">    myd.<span class="built_in">fun</span>();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>按照该程序的继承关系，D1继承关系、成员构成及存储分布图如下所示：<br><img src="/images/e184ac74b250b5e84824e9e520fb5e8f/2.jpg"></p>
+<p><font color="#E3940B">这两段程序有着两个地方的区别：</font></p>
+<blockquote>
+<p>区别一：<br>程序1：class B1:public B0 class B2:public B0<br>程序2：class B1:virtual public B0 class B2:virtual public B0<br>我们在B1类和B2类继承B0类时，在前面加上virtual关键字就可以实现虚拟继承，使用虚拟继承后，当系统碰到多重继承的时候就会自动先加入一个B0的拷贝，当再次请求一个B0的拷贝的时候就会被忽略，保证继承类成员函数的唯一性。</p>
+</blockquote>
+<blockquote>
+<p>区别二：<br>程序1：D1(int a, int b, int c, int d):B1(a,b),B2(a,c),nvd(d){}<br>程序2：D1(int a, int b, int c, int d):B0(a),B1(a,b),B2(a,c),nvd(d){}<br>建立一个对象时，如果这个对象中含有从虚基类继承来的成员，则虚基类的成员是由最远派生类构造函数（在这里是D1类）进行初始化的，而且只有最远派生类的构造函数会调用虚基类的构造函数，该派生类的其他基类（B1和B2）对虚基类构造函数的调用都自动被忽略。</p>
+</blockquote>
+<p><font color="#E3940B">作用域分辨符</font><br>如果某个派生类的部分或全部直接基类是从另外一个共同的基类派生而来，在这些直接基类中，从上一级基类继承来的成员就拥有相同的名称，因此派生类中也产生同名现象，对这种类型的同名成员也要使用作用域分辨符来唯一标示，而其必须用直接基类来进行限定。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/C/" rel="tag"># C++</a>
+              <a href="/tags/%E8%99%9A%E5%87%BD%E6%95%B0/" rel="tag"># 虚函数</a>
+              <a href="/tags/%E8%99%9A%E6%9E%90%E6%9E%84%E5%87%BD%E6%95%B0/" rel="tag"># 虚析构函数</a>
+              <a href="/tags/%E7%BA%AF%E8%99%9A%E5%87%BD%E6%95%B0/" rel="tag"># 纯虚函数</a>
+              <a href="/tags/%E8%99%9A%E5%9F%BA%E7%B1%BB/" rel="tag"># 虚基类</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/posts/5884f704c266996e0c594a2c54226762.html" rel="prev" title="shell文件读取">
+      <i class="fa fa-chevron-left"></i> shell文件读取
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/posts/d841027d99af00846e5f621b77f1162b.html" rel="next" title="C++语法之explicit">
+      C++语法之explicit <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%99%9A%E5%87%BD%E6%95%B0"><span class="nav-number">1.</span> <span class="nav-text">虚函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%99%9A%E6%9E%90%E6%9E%84%E5%87%BD%E6%95%B0"><span class="nav-number">2.</span> <span class="nav-text">虚析构函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BA%AF%E8%99%9A%E5%87%BD%E6%95%B0%EF%BC%88%E6%8A%BD%E8%B1%A1%E7%B1%BB%E7%9A%84%E5%9F%BA%E7%A1%80%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">纯虚函数（抽象类的基础）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%99%9A%E5%9F%BA%E7%B1%BB-%E8%99%9A%E6%8B%9F%E7%BB%A7%E6%89%BF"><span class="nav-number">4.</span> <span class="nav-text">虚基类(虚拟继承)</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PagePaper"
+      src="/assets/logo/header.jpeg">
+  <p class="site-author-name" itemprop="name">PagePaper</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/weimake" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;weimake" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:pagepaper@126.com" title="E-Mail → mailto:pagepaper@126.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/motadou" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;motadou" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://plus.google.com/pagepaper" title="Google → https:&#x2F;&#x2F;plus.google.com&#x2F;pagepaper" rel="noopener" target="_blank"><i class="fa fa-fw fa-google"></i>Google</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PagePaper</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
