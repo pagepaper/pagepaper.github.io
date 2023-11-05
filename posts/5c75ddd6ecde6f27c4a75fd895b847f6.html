@@ -252,13 +252,13 @@
 <p />
 
 <p>选择阿里云镜像网站：<a target="_blank" rel="noopener" href="https://mirrors.aliyun.com/pub/OpenBSD/OpenSSH/portable/">https://mirrors.aliyun.com/pub/OpenBSD/OpenSSH/portable/</a><br><img src="/images/5c75ddd6ecde6f27c4a75fd895b847f6/6.png"></p>
-<p><strong>第三：使用Github仓库提供的Tags版本</strong><br>Github的代码仓库没有提供Relase版本，提供了一些Tag版本，从Tags页面我们下载Tag版本。<br>Tag页面：<a target="_blank" rel="noopener" href="https://github.com/openssh/openssh-portable/tags">https://github.com/openssh/openssh-portable/tags</a></p>
+<p><strong>第三：使用Github仓库提供的Tags版本</strong><br>Github的代码仓库没有提供Relase版本，提供了一些Tag版本，从Tags页面我们下载Tag版本。<br>该代码包没有预先生成的configure脚本，需要我们自己生成(<font color="#FF0000">如官方所说：you’ll need autoconf installed to build the configure script</font>)。<br>Tag页面：<a target="_blank" rel="noopener" href="https://github.com/openssh/openssh-portable/tags">https://github.com/openssh/openssh-portable/tags</a></p>
 <p><img src="/images/5c75ddd6ecde6f27c4a75fd895b847f6/8.png"></p>
-<p><strong>第四：Git Clone当前main分支</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/openssh/openssh-portable <span class="comment"># or https://anongit.mindrot.org/openssh.git</span></span><br></pre></td></tr></table></figure>
+<p><strong>第四：git clone当前main分支</strong><br>该代码包没有预先生成的configure脚本，需要我们自己生成(<font color="#FF0000">如官方所说：you’ll need autoconf installed to build the configure script</font>)。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://github.com/openssh/openssh-portable <span class="comment"># or https://anongit.mindrot.org/openssh.git</span></span><br></pre></td></tr></table></figure>
 
 <h2 id="编译OpenSSH"><a href="#编译OpenSSH" class="headerlink" title="编译OpenSSH"></a>编译OpenSSH</h2><p>使用上述几种方式下载我们所需代码包之后，我们本地以代码包”openssh-portable-V_8_9_P1.tar.gz”为例，将其拷贝到服务器之后，相继执行如下命令：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">tar -zxf openssh-portable-V_8_9_P1.tar.gz</span><br><span class="line"><span class="built_in">cd</span> openssh-portable-V_8_9_P1</span><br><span class="line">autoconf</span><br><span class="line">ll configure <span class="comment">## 查看configure文件是否正常生成</span></span><br><span class="line">./configure</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ tar -zxf openssh-portable-V_8_9_P1.tar.gz</span><br><span class="line">$ <span class="built_in">cd</span> openssh-portable-V_8_9_P1</span><br><span class="line">$ autoconf</span><br><span class="line">$ ll configure <span class="comment">## 查看configure文件是否正常生成</span></span><br><span class="line">$ ./configure</span><br></pre></td></tr></table></figure>
 <p><font color="#FF0000"><strong>注意：Releases代码包提供了configure文件，所以无需使用autoreconf来生成configure文件，而Tags或者Git Clone版本需要执行autoreconf。</strong></font></p>
 <p />
 
@@ -269,7 +269,7 @@
 <p><img src="/images/5c75ddd6ecde6f27c4a75fd895b847f6/3.png"></p>
 </blockquote>
 <p>使用<font color="#FF0000"><strong>autoreconf</strong></font>命令再次产生configure文件，使用此文件进行配置，可以正常生成Makefile。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./configure</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ ./configure</span><br></pre></td></tr></table></figure>
 <p/>
 
 <p><img src="/images/5c75ddd6ecde6f27c4a75fd895b847f6/4.png"></p>
