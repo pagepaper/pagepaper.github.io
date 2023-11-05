@@ -265,10 +265,10 @@
 <p><img src="/images/5c75ddd6ecde6f27c4a75fd895b847f6/1.png"></p>
 <blockquote>
 <p>我们发现configure也生成了，但执行.&#x2F;configure命令的时候报错了，提示下面的错误：<br><img src="/images/5c75ddd6ecde6f27c4a75fd895b847f6/2.png"><br> <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">./configure: line 5859: syntax error near unexpected token `-pipe<span class="string">&#x27;</span></span><br><span class="line"><span class="string">./configure: line 5859: `       OSSH_CHECK_CFLAG_COMPILE(-pipe)&#x27;</span></span><br></pre></td></tr></table></figure></p>
-<p>从网上了找了下，错误的解决方法，提示不适用autoconf命令，<a target="_blank" rel="noopener" href="http://lists.mindrot.org/pipermail/openssh-bugs/2016-May/016330.html">但可以使用autoreconf命令来解决</a> </p>
+<p>从网上了找了下，错误的解决方法，提示不适用autoconf命令，<a target="_blank" rel="noopener" href="http://lists.mindrot.org/pipermail/openssh-bugs/2016-May/016330.html">但可以使用<font color="#FF0000"><strong>autoreconf</strong></font>命令来解决</a> </p>
 <p><img src="/images/5c75ddd6ecde6f27c4a75fd895b847f6/3.png"></p>
 </blockquote>
-<p>使用autoreconf命令再次产生configure文件，使用此文件进行配置，可以正常生成Makefile。</p>
+<p>使用<font color="#FF0000"><strong>autoreconf</strong></font>命令再次产生configure文件，使用此文件进行配置，可以正常生成Makefile。</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./configure</span><br></pre></td></tr></table></figure>
 <p/>
 
