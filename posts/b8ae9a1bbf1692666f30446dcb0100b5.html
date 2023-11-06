@@ -312,7 +312,11 @@
 <p><strong>0x06 下载构建环境</strong></p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$(outside) cros_sdk</span><br></pre></td></tr></table></figure>
 
-<p>注意：<br>1.cros_sdk不需要经常下载，基本上下载一次即可。<br>2.如需删除chroot，请使用cros_sdk –delete正确删除它。</p>
+<p><strong>注意：</strong></p>
+<ul>
+<li>1.cros_sdk不需要经常下载，基本上下载一次即可。</li>
+<li>2.如需删除chroot，请使用cros_sdk –delete正确删除它。</li>
+</ul>
 <p><strong>0x07 构建编译脚本</strong></p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 以下所有的步骤，都在chroot之后，如果你退出了，再次编译时，务必使用cros_sdk再次进入chroot</span></span><br><span class="line">$(outside) cros_sdk</span><br><span class="line"></span><br><span class="line">$(inside) <span class="built_in">export</span> BOARD=amd64-generic</span><br><span class="line"></span><br><span class="line">$(inside) setup_board --board=<span class="variable">$&#123;BOARD&#125;</span></span><br></pre></td></tr></table></figure>
 
@@ -326,15 +330,22 @@
 <p>构建完成之后，生成的映像文件目录：<br><img src="/images/b8ae9a1bbf1692666f30446dcb0100b5/7.png"></p>
 <p>latest是指向最新映像包的软连接，进入该目录之后，我们会看到生成好的映像文件。<br><img src="/images/b8ae9a1bbf1692666f30446dcb0100b5/8.png"></p>
 <p><font color="#FF0000">&#x2F;home&#x2F;chrome&#x2F;chromiumos&#x2F;src&#x2F;build&#x2F;images&#x2F;amd64-generic&#x2F;latest&#x2F;chromiumos_image.bin</font><br>该文件就是我们最终需要的映像文件，将其拷贝出来，在其他机器上使用U盘烧录工具，写入U盘，然后我们使用U盘引导系统，进行体验。</p>
-<h2 id="更换开机动画"><a href="#更换开机动画" class="headerlink" title="更换开机动画"></a>更换开机动画</h2><p>首先，先说明两个目录：<br><font color="#FF0000">&#x2F;home&#x2F;chrome&#x2F;chromiumos&#x2F;src&#x2F;platform&#x2F;chromiumos-assets</font><br>该目录下是我们的代码目录，我们使用修改后的序列图替换本处的图片。系统会自动编译该目录，然后将该目录下的图片放到编译后的正确的目录（也就是下面这个目录）。</p>
-<p><font color="#FF0000">&#x2F;home&#x2F;chrome&#x2F;chromiumos&#x2F;chroot&#x2F;build&#x2F;amd64-generic&#x2F;usr&#x2F;share&#x2F;chromeos-assets</font><br>该目录下的存放真实的启动序列图，你的图片到底有没有编译进来，可以到这个目录来验证。</p>
+<h2 id="更换开机动画"><a href="#更换开机动画" class="headerlink" title="更换开机动画"></a>更换开机动画</h2><p>首先，先说明两个目录：</p>
+<ul>
+<li><p><font color="#FF0000">&#x2F;home&#x2F;chrome&#x2F;chromiumos&#x2F;src&#x2F;platform&#x2F;chromiumos-assets</font><br>该目录下是我们的代码目录，我们使用修改后的序列图替换本处的图片。系统会自动编译该目录，然后将该目录下的图片放到编译后的正确的目录（也就是下面这个目录）。</p>
+</li>
+<li><p><font color="#FF0000">&#x2F;home&#x2F;chrome&#x2F;chromiumos&#x2F;chroot&#x2F;build&#x2F;amd64-generic&#x2F;usr&#x2F;share&#x2F;chromeos-assets</font><br>该目录下的存放真实的启动序列图，你的图片到底有没有编译进来，可以到这个目录来验证。</p>
+</li>
+</ul>
 <p>所以，我们先使用如下的命令，告诉编译系统，使用本地资源包，而不是从网上下载。</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$(inside) cros_workon --board=<span class="variable">$&#123;BOARD&#125;</span> start chromeos-base/chromiumos-assets</span><br></pre></td></tr></table></figure>
-
-<p>上述命令执行完之后，我们继续使用如下的命令构建映像。</p>
+<p style="margin-top:20px"/>
+上述命令执行完之后，我们继续使用如下的命令构建映像。
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 如果在以前代码的基础上构建的，已经设置过密码，可以忽略</span></span><br><span class="line">$(inside) ./set_shared_user_password.sh</span><br><span class="line"></span><br><span class="line">$(inside) ./build_packages --board=<span class="variable">$&#123;BOARD&#125;</span></span><br><span class="line"></span><br><span class="line">$(inside) ./build_image --board=<span class="variable">$&#123;BOARD&#125;</span> --noenable_rootfs_verification</span><br></pre></td></tr></table></figure>
+<p style="margin-top:20px" />
+参考图，从下图的红色框标注的地方，我们可以发现，编译系统知道我们修改了本次，所以它会从本地构建。
 
-<p>参考图，从下图的红色框标注的地方，我们可以发现，编译系统知道我们修改了本次，所以它会从本地构建。<br><img src="/images/b8ae9a1bbf1692666f30446dcb0100b5/9.png"></p>
+<p><img src="/images/b8ae9a1bbf1692666f30446dcb0100b5/9.png"></p>
 <p>执行完build_packages命令之后，我们可以到下述目录去看看看我们的资源包是不是替换了。<br><img src="/images/b8ae9a1bbf1692666f30446dcb0100b5/10.png"></p>
 <h2 id="将系统安装从USB安装到运行机的硬盘上"><a href="#将系统安装从USB安装到运行机的硬盘上" class="headerlink" title="将系统安装从USB安装到运行机的硬盘上"></a>将系统安装从USB安装到运行机的硬盘上</h2><p><strong>0x01 使用U盘引导进入ChromiumOS的图形界面（比如那个选择wifi的地方）</strong></p>
 <p><strong>0x02 在进入图形界面之后，使用组合键：Ctrl + Alt + F2，进入命令界面</strong><br><img src="/images/b8ae9a1bbf1692666f30446dcb0100b5/11.jpg"></p>
