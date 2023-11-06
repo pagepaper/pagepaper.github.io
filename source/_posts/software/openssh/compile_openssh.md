@@ -63,30 +63,14 @@ $ git clone https://github.com/openssh/openssh-portable # or https://anongit.min
 ``` bash
 $ tar -zxf openssh-portable-V_8_9_P1.tar.gz
 $ cd openssh-portable-V_8_9_P1
-$ autoconf
+$ autoreconf
 $ ll configure ## 查看configure文件是否正常生成
 $ ./configure
 ```
 <font color="#FF0000">**注意：Releases代码包提供了configure文件，所以无需使用autoreconf来生成configure文件，而Tags或者Git Clone版本需要执行autoreconf。**</font>
-<p />
 
-![](/images/5c75ddd6ecde6f27c4a75fd895b847f6/1.png)
+执行configure命令之后，正确完成配置并生成了Makefile文件。
 
-> 我们发现configure也生成了，但执行./configure命令的时候报错了，提示下面的错误：
-> ![](/images/5c75ddd6ecde6f27c4a75fd895b847f6/2.png)
->  ``` bash
-   ./configure: line 5859: syntax error near unexpected token `-pipe'
-   ./configure: line 5859: `       OSSH_CHECK_CFLAG_COMPILE(-pipe)'
->  ```
-> 
-> 从网上了找了下，错误的解决方法，提示不适用autoconf命令，[但可以使用<font color="#FF0000">**autoreconf**</font>命令来解决](http://lists.mindrot.org/pipermail/openssh-bugs/2016-May/016330.html) 
->
-> ![](/images/5c75ddd6ecde6f27c4a75fd895b847f6/3.png)
-
-使用<font color="#FF0000">**autoreconf**</font>命令再次产生configure文件，使用此文件进行配置，可以正常生成Makefile。
-``` bash
-$ ./configure
-```
 <p/>
 
 ![](/images/5c75ddd6ecde6f27c4a75fd895b847f6/4.png)
@@ -103,6 +87,25 @@ kevintian@dev:~/objs/openssh-portable-V_8_9_P1$ make
 至此可以正确编译出我们所需可执行程序。
 ![](/images/5c75ddd6ecde6f27c4a75fd895b847f6/9.png)
 
+## 编译OpenSSH的一个错误
+在前面编译OpenSSH有步需要使用**autoreconf**来生成configure脚本，而我使用了**autoconf**命令。
+
+<p />
+
+![](/images/5c75ddd6ecde6f27c4a75fd895b847f6/1.png)
+
+我们发现configure也生成了，但执行./configure命令的时候报错了，提示下面的错误：
+![](/images/5c75ddd6ecde6f27c4a75fd895b847f6/2.png)
+``` bash
+./configure: line 5859: syntax error near unexpected token `-pipe'
+./configure: line 5859: `       OSSH_CHECK_CFLAG_COMPILE(-pipe)'
+```
+ 
+从网上了找了下，错误的解决方法，提示不适用autoconf命令，[但可以使用<font color="#FF0000">**autoreconf**</font>命令来解决](http://lists.mindrot.org/pipermail/openssh-bugs/2016-May/016330.html) 
+
+![](/images/5c75ddd6ecde6f27c4a75fd895b847f6/3.png)
+
+使用<font color="#FF0000">**autoreconf**</font>命令再次产生configure文件，该脚本可以正常配置以及生成Makefile。
 
 ## 参考资料
 1.https://baike.baidu.com/item/OpenSSH/1137789
