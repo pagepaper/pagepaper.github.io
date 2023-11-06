@@ -7,13 +7,13 @@ title: PagePaper
 subtitle: ''
 description: ''
 keywords:
-author: PagePaper
+author: 柴米油盐酱醋茶
 language: zh-CN
 timezone: ''
 
 # URL
 ## Set your site url here. For example, if you use GitHub Page, set url as 'https://username.github.io/project'
-url: http://example.com
+url: http://pagepaper.github.io
 permalink: /posts/:urlname.html
 permalink_defaults:
 pretty_urls:
