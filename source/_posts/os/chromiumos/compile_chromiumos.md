@@ -143,9 +143,9 @@ $(outside) repo sync -j4
 $(outside) cros_sdk
 ```
 
-注意：
-1.cros_sdk不需要经常下载，基本上下载一次即可。
-2.如需删除chroot，请使用cros_sdk --delete正确删除它。
+**注意：**
+* 1.cros_sdk不需要经常下载，基本上下载一次即可。
+* 2.如需删除chroot，请使用cros_sdk --delete正确删除它。
 
 **0x07 构建编译脚本**
 ``` bash
@@ -185,17 +185,17 @@ latest是指向最新映像包的软连接，进入该目录之后，我们会�
 
 ## 更换开机动画
 首先，先说明两个目录：
-<font color="#FF0000">/home/chrome/chromiumos/src/platform/chromiumos-assets</font>
-该目录下是我们的代码目录，我们使用修改后的序列图替换本处的图片。系统会自动编译该目录，然后将该目录下的图片放到编译后的正确的目录（也就是下面这个目录）。
+* <font color="#FF0000">/home/chrome/chromiumos/src/platform/chromiumos-assets</font>
+  该目录下是我们的代码目录，我们使用修改后的序列图替换本处的图片。系统会自动编译该目录，然后将该目录下的图片放到编译后的正确的目录（也就是下面这个目录）。
 
-<font color="#FF0000">/home/chrome/chromiumos/chroot/build/amd64-generic/usr/share/chromeos-assets</font>
-该目录下的存放真实的启动序列图，你的图片到底有没有编译进来，可以到这个目录来验证。
+* <font color="#FF0000">/home/chrome/chromiumos/chroot/build/amd64-generic/usr/share/chromeos-assets</font>
+  该目录下的存放真实的启动序列图，你的图片到底有没有编译进来，可以到这个目录来验证。
 
 所以，我们先使用如下的命令，告诉编译系统，使用本地资源包，而不是从网上下载。
 ``` bash
 $(inside) cros_workon --board=${BOARD} start chromeos-base/chromiumos-assets
 ```
-
+<p style="margin-top:20px"/>
 上述命令执行完之后，我们继续使用如下的命令构建映像。
 ``` bash
 # 如果在以前代码的基础上构建的，已经设置过密码，可以忽略
@@ -205,8 +205,9 @@ $(inside) ./build_packages --board=${BOARD}
 
 $(inside) ./build_image --board=${BOARD} --noenable_rootfs_verification
 ```
-
+<p style="margin-top:20px" />
 参考图，从下图的红色框标注的地方，我们可以发现，编译系统知道我们修改了本次，所以它会从本地构建。
+
 ![](/images/b8ae9a1bbf1692666f30446dcb0100b5/9.png)
 
 执行完build_packages命令之后，我们可以到下述目录去看看看我们的资源包是不是替换了。
