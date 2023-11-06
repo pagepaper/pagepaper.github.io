@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":20,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="ChromiumOS是谷歌的一款云操作系统，秉承了Chrome浏览器快速、简洁、安全的特性。相比Windows、Mac OS等传统的本地操作系统来说，一种新的、应用“云计算”来实现大部分功能、本地计算机只存储少量信息的新操作系统模式渐渐崭露头角。Chromium OS就是这样的一款轻量型、云计算为主的操作系统。目前Google与多家一线终端制造商合作开发出了基于ChromiumOS的ChromeB">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ChromiumOS编译研究总结">
+<meta property="og:url" content="http://example.com/posts/b8ae9a1bbf1692666f30446dcb0100b5.html">
+<meta property="og:site_name" content="PagePaper">
+<meta property="og:description" content="ChromiumOS是谷歌的一款云操作系统，秉承了Chrome浏览器快速、简洁、安全的特性。相比Windows、Mac OS等传统的本地操作系统来说，一种新的、应用“云计算”来实现大部分功能、本地计算机只存储少量信息的新操作系统模式渐渐崭露头角。Chromium OS就是这样的一款轻量型、云计算为主的操作系统。目前Google与多家一线终端制造商合作开发出了基于ChromiumOS的ChromeB">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/b8ae9a1bbf1692666f30446dcb0100b5/1.png">
+<meta property="og:image" content="http://example.com/images/b8ae9a1bbf1692666f30446dcb0100b5/2.jpg">
+<meta property="og:image" content="http://example.com/images/b8ae9a1bbf1692666f30446dcb0100b5/3.jpg">
+<meta property="og:image" content="http://example.com/images/b8ae9a1bbf1692666f30446dcb0100b5/4.png">
+<meta property="og:image" content="http://example.com/images/b8ae9a1bbf1692666f30446dcb0100b5/5.png">
+<meta property="og:image" content="http://example.com/images/b8ae9a1bbf1692666f30446dcb0100b5/6.png">
+<meta property="og:image" content="http://example.com/images/b8ae9a1bbf1692666f30446dcb0100b5/7.png">
+<meta property="og:image" content="http://example.com/images/b8ae9a1bbf1692666f30446dcb0100b5/8.png">
+<meta property="og:image" content="http://example.com/images/b8ae9a1bbf1692666f30446dcb0100b5/9.png">
+<meta property="og:image" content="http://example.com/images/b8ae9a1bbf1692666f30446dcb0100b5/10.png">
+<meta property="og:image" content="http://example.com/images/b8ae9a1bbf1692666f30446dcb0100b5/11.jpg">
+<meta property="article:published_time" content="2021-07-10T09:43:34.000Z">
+<meta property="article:modified_time" content="2021-07-10T09:43:34.000Z">
+<meta property="article:author" content="PagePaper">
+<meta property="article:tag" content="ChromiumOS">
+<meta property="article:tag" content="操作系统">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/b8ae9a1bbf1692666f30446dcb0100b5/1.png">
+
+<link rel="canonical" href="http://example.com/posts/b8ae9a1bbf1692666f30446dcb0100b5.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>ChromiumOS编译研究总结 | PagePaper</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PagePaper</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/posts/b8ae9a1bbf1692666f30446dcb0100b5.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/assets/logo/header.jpeg">
+      <meta itemprop="name" content="PagePaper">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PagePaper">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ChromiumOS编译研究总结
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-07-10 17:43:34" itemprop="dateCreated datePublished" datetime="2021-07-10T17:43:34+08:00">2021-07-10</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/ChromiumOS/" itemprop="url" rel="index"><span itemprop="name">ChromiumOS</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>ChromiumOS是谷歌的一款云操作系统，秉承了Chrome浏览器快速、简洁、安全的特性。相比Windows、Mac OS等传统的本地操作系统来说，一种新的、应用“云计算”来实现大部分功能、本地计算机只存储少量信息的新操作系统模式渐渐崭露头角。Chromium OS就是这样的一款轻量型、云计算为主的操作系统。目前Google与多家一线终端制造商合作开发出了基于ChromiumOS的ChromeBook系列产品，比如三星的Series 5系列。</p>
+<p>本文目标<br>目标1：原生ChromiumOS的编译步骤、方法和注意事项<br>目标2：更换原生ChromiumOS的开机动画<br>目标3：简述ChromiumOS的编译原理</p>
+<h2 id="ChromiumOS的相关资源"><a href="#ChromiumOS的相关资源" class="headerlink" title="ChromiumOS的相关资源"></a>ChromiumOS的相关资源</h2><table>
+<thead>
+<tr>
+<th>网站</th>
+<th>链接</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Chromium官方网站</td>
+<td><a target="_blank" rel="noopener" href="https://www.chromium.org/">https://www.chromium.org</a></td>
+</tr>
+<tr>
+<td>ChromiumOS官方网站</td>
+<td><a target="_blank" rel="noopener" href="https://www.chromium.org/chromium-os">https://www.chromium.org/chromium-os</a></td>
+</tr>
+<tr>
+<td>ChromiumOS代码</td>
+<td><a target="_blank" rel="noopener" href="https://chromium.googlesource.com/chromiumos">https://chromium.googlesource.com/chromiumos</a></td>
+</tr>
+<tr>
+<td>ChromiumOS文档入口</td>
+<td><a target="_blank" rel="noopener" href="https://chromium.googlesource.com/chromiumos/docs/">https://chromium.googlesource.com/chromiumos/docs/</a></td>
+</tr>
+<tr>
+<td>ChromiumOS文档</td>
+<td><a target="_blank" rel="noopener" href="https://chromium.googlesource.com/chromiumos/docs/+/HEAD/README.md">https://chromium.googlesource.com/chromiumos/docs/+/HEAD/README.md</a></td>
+</tr>
+<tr>
+<td>ChromiumOS磁盘映像结构</td>
+<td><a target="_blank" rel="noopener" href="https://chromium.googlesource.com/chromiumos/docs/+/HEAD/disk_format.md">https://chromium.googlesource.com/chromiumos/docs/+/HEAD/disk_format.md</a></td>
+</tr>
+<tr>
+<td>ChromiumOS启动</td>
+<td><a target="_blank" rel="noopener" href="https://www.chromium.org/chromium-os/chromiumos-design-docs/boot-design">https://www.chromium.org/chromium-os/chromiumos-design-docs/boot-design</a></td>
+</tr>
+</tbody></table>
+<span id="more"></span>
+
+<h2 id="编译ChromiumOS"><a href="#编译ChromiumOS" class="headerlink" title="编译ChromiumOS"></a>编译ChromiumOS</h2><p><strong>0x01 确认环境依赖</strong></p>
+<ul>
+<li>Ubuntu Linux (version 18.04 - Bionic)(需64位系统)</li>
+<li>一个具有sudo权限的账号</li>
+<li>大内存机器（本次编译是在编译机上架设的虚拟机，该虚拟机尽量把CPU都选上，内存开辟到20G以上，磁盘在100G以上）</li>
+</ul>
+<p><strong>0x02 安装依赖软件，安装git，python等软件</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ sudo apt-get install git gitk git-gui curl xz-utils python3-pkg-resources python3-virtualenv python3-oauth2client</span><br></pre></td></tr></table></figure>
+
+<p>Git安装完毕之后使用如下命令配置Git</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ git config --global user.email <span class="string">&quot;you@example.com&quot;</span></span><br><span class="line">$ git config --global user.name <span class="string">&quot;Your Name&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>如果不进行配置，在下载代码时，可能会出现如下的错误：</p>
+<p><img src="/images/b8ae9a1bbf1692666f30446dcb0100b5/1.png"></p>
+<p><strong>0x03 安装Google的代码下载工具depot_tools</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">mkdir</span> -p /home/chrome/apps/depot_tools</span><br><span class="line"></span><br><span class="line">$ <span class="built_in">cd</span> /home/chrome/apps/depot_tools</span><br><span class="line"></span><br><span class="line">$ git <span class="built_in">clone</span> https://chromium.googlesource.com/chromium/tools/depot_tools.git</span><br></pre></td></tr></table></figure>
+
+<p>代码下载完毕之后，我们将depot_tools放到系统目录中。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ sudo vi /etc/profile</span><br><span class="line"></span><br><span class="line"><span class="comment"># 将如下的命令加入到/etc/profile</span></span><br><span class="line">$ <span class="built_in">export</span> PATH=/home/chrome/apps/depot_tools:<span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line">$ <span class="built_in">source</span> /etc/profile</span><br></pre></td></tr></table></figure>
+
+<p><strong>0x04 设置sudoers超时时间</strong><br>如果不想每次启动新终端都重新输入密码，在配置文件中禁止tty_tickets即可，但此举使得所有进程都使用同一个sudo任务，具体参看跨终端sudo。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> /tmp</span><br><span class="line">$ <span class="built_in">cat</span> &gt; ./sudo_editor &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">#!/bin/sh</span></span><br><span class="line"><span class="string">echo Defaults \!tty_tickets &gt; \$1          # Entering your password in one shell affects all shells</span></span><br><span class="line"><span class="string">echo Defaults timestamp_timeout=180 &gt;&gt; \$1 # Time between re-requesting your password, in minutes</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line">$ <span class="built_in">chmod</span> +x ./sudo_editor</span><br><span class="line">$ sudo EDITOR=./sudo_editor visudo -f /etc/sudoers.d/relax_requirements</span><br></pre></td></tr></table></figure>
+
+<p>上述方法为官方教程，但我实验过后发现如下问题：</p>
+<p><img src="/images/b8ae9a1bbf1692666f30446dcb0100b5/2.jpg"></p>
+<p>unchanged？也就是说，没有改变，没有生效？？！！看来官方教程也有错误。所以我用了其他的方法。</p>
+<blockquote>
+<p>新方法如下所述：<br><strong>第一步</strong>，先设置visudo的编辑器，Ubuntu默认采用nano作为visudo的编辑器，我用不习惯，先变成vi再说（如果你习惯了nano，那么不用做这一步）。<br>使用如下命令编辑&#x2F;etc&#x2F;sudoers文件。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ sudo vi /etc/sudoers</span><br></pre></td></tr></table></figure>
+<p>打开文件之后，在文件中加入如下一行命令即可：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Defaults editor=/usr/bin/vi, env_editor</span><br></pre></td></tr></table></figure>
+
+<p>添加内容之后，如下图所示：<br><img src="/images/b8ae9a1bbf1692666f30446dcb0100b5/3.jpg"></p>
+<p><strong>第二步</strong>，我们使用如下命令编辑 &#x2F;etc&#x2F;sudoers这个文件。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ sudo visudo</span><br></pre></td></tr></table></figure>
+<p>从第一步来看，既然我们可以使用vi命令来编辑这个文件，为什么还要用“sudo visudo”呢？<br>答案：千万不要使用普通的编辑命令如vi来修改sudoers文件。由于该文件的特殊性，错误的语法将导致你无法在系统里获取提升权限。正确的修改方式是使用visudo命令。visudo命令将打开一个文字编辑器，但是在保存文件的时候，将会验证sudoers文件的语法。这将防止你配置错误导致sudo命令受阻。</p>
+<p><strong>第三步</strong>，打开文件之后，我们在文件中添加如下内容。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Defaults !tty_tickets</span><br><span class="line"></span><br><span class="line">Defaults timestamp_timeout=180</span><br></pre></td></tr></table></figure>
+<p>添加内容之后，如下图所示：<br><img src="/images/b8ae9a1bbf1692666f30446dcb0100b5/4.png"><br>退出编辑，不需要使用其他的命令，修改的配置即刻生效！</p>
+</blockquote>
+<p><strong>0x05 下载源代码</strong><br>按照官方指引，官方希望大家把ChromiumOS的代码下载到当前用户home目录的根节点下。比如当前的用户为chrome，那么我们应当将源代码下载到 &#x2F;home&#x2F;chrome&#x2F;chromiumos目录。当然，这里修改成你的账户名。<br>所以我们创建一个目录：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">$(outside) <span class="built_in">mkdir</span> -p /home/chrome/chromiumos</span><br><span class="line"></span><br><span class="line">$(outside) <span class="built_in">cd</span> /home/chrome/chromiumos</span><br><span class="line"></span><br><span class="line"><span class="comment"># 初始化下载列表</span></span><br><span class="line">$(outside) repo init -u https://chromium.googlesource.com/chromiumos/manifest</span><br><span class="line"></span><br><span class="line"><span class="comment"># 开始下载代码，下载线程设置的不能多也不能少。。。</span></span><br><span class="line">$(outside) repo <span class="built_in">sync</span> -j4</span><br></pre></td></tr></table></figure>
+
+<p>根据网速的不同，下载有可能需要几个小时不等，需要慢慢耐心等待。下面是一些下载过程中的截图，供参考。<br><img src="/images/b8ae9a1bbf1692666f30446dcb0100b5/5.png"><br><img src="/images/b8ae9a1bbf1692666f30446dcb0100b5/6.png"></p>
+<p><strong>0x06 下载构建环境</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$(outside) cros_sdk</span><br></pre></td></tr></table></figure>
+
+<p>注意：<br>1.cros_sdk不需要经常下载，基本上下载一次即可。<br>2.如需删除chroot，请使用cros_sdk –delete正确删除它。</p>
+<p><strong>0x07 构建编译脚本</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 以下所有的步骤，都在chroot之后，如果你退出了，再次编译时，务必使用cros_sdk再次进入chroot</span></span><br><span class="line">$(outside) cros_sdk</span><br><span class="line"></span><br><span class="line">$(inside) <span class="built_in">export</span> BOARD=amd64-generic</span><br><span class="line"></span><br><span class="line">$(inside) setup_board --board=<span class="variable">$&#123;BOARD&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>0x08 编译各种资源包</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 设置密码：当我们编译成功后，进入ChromiumOS之后，可以进入命令界面</span></span><br><span class="line"><span class="comment"># 在命令界面需要Login，这里就是设置Login的密码，Login账号是默认的：chronos</span></span><br><span class="line">$(inside) ./set_shared_user_password.sh </span><br><span class="line"></span><br><span class="line"><span class="comment"># 开始编译资源包</span></span><br><span class="line">$(inside) ./build_packages --board=<span class="variable">$&#123;BOARD&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>编译资源包需要的时间也不少，在当前的编译机上，大概需要60m到80m之间。</p>
+<p><strong>0x09 构建映像</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$(inside) ./build_image --board=<span class="variable">$&#123;BOARD&#125;</span> --noenable_rootfs_verification</span><br></pre></td></tr></table></figure>
+
+<p>构建完成之后，生成的映像文件目录：<br><img src="/images/b8ae9a1bbf1692666f30446dcb0100b5/7.png"></p>
+<p>latest是指向最新映像包的软连接，进入该目录之后，我们会看到生成好的映像文件。<br><img src="/images/b8ae9a1bbf1692666f30446dcb0100b5/8.png"></p>
+<p><font color="#FF0000">&#x2F;home&#x2F;chrome&#x2F;chromiumos&#x2F;src&#x2F;build&#x2F;images&#x2F;amd64-generic&#x2F;latest&#x2F;chromiumos_image.bin</font><br>该文件就是我们最终需要的映像文件，将其拷贝出来，在其他机器上使用U盘烧录工具，写入U盘，然后我们使用U盘引导系统，进行体验。</p>
+<h2 id="更换开机动画"><a href="#更换开机动画" class="headerlink" title="更换开机动画"></a>更换开机动画</h2><p>首先，先说明两个目录：<br><font color="#FF0000">&#x2F;home&#x2F;chrome&#x2F;chromiumos&#x2F;src&#x2F;platform&#x2F;chromiumos-assets</font><br>该目录下是我们的代码目录，我们使用修改后的序列图替换本处的图片。系统会自动编译该目录，然后将该目录下的图片放到编译后的正确的目录（也就是下面这个目录）。</p>
+<p><font color="#FF0000">&#x2F;home&#x2F;chrome&#x2F;chromiumos&#x2F;chroot&#x2F;build&#x2F;amd64-generic&#x2F;usr&#x2F;share&#x2F;chromeos-assets</font><br>该目录下的存放真实的启动序列图，你的图片到底有没有编译进来，可以到这个目录来验证。</p>
+<p>所以，我们先使用如下的命令，告诉编译系统，使用本地资源包，而不是从网上下载。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$(inside) cros_workon --board=<span class="variable">$&#123;BOARD&#125;</span> start chromeos-base/chromiumos-assets</span><br></pre></td></tr></table></figure>
+
+<p>上述命令执行完之后，我们继续使用如下的命令构建映像。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 如果在以前代码的基础上构建的，已经设置过密码，可以忽略</span></span><br><span class="line">$(inside) ./set_shared_user_password.sh</span><br><span class="line"></span><br><span class="line">$(inside) ./build_packages --board=<span class="variable">$&#123;BOARD&#125;</span></span><br><span class="line"></span><br><span class="line">$(inside) ./build_image --board=<span class="variable">$&#123;BOARD&#125;</span> --noenable_rootfs_verification</span><br></pre></td></tr></table></figure>
+
+<p>参考图，从下图的红色框标注的地方，我们可以发现，编译系统知道我们修改了本次，所以它会从本地构建。<br><img src="/images/b8ae9a1bbf1692666f30446dcb0100b5/9.png"></p>
+<p>执行完build_packages命令之后，我们可以到下述目录去看看看我们的资源包是不是替换了。<br><img src="/images/b8ae9a1bbf1692666f30446dcb0100b5/10.png"></p>
+<h2 id="将系统安装从USB安装到运行机的硬盘上"><a href="#将系统安装从USB安装到运行机的硬盘上" class="headerlink" title="将系统安装从USB安装到运行机的硬盘上"></a>将系统安装从USB安装到运行机的硬盘上</h2><p><strong>0x01 使用U盘引导进入ChromiumOS的图形界面（比如那个选择wifi的地方）</strong></p>
+<p><strong>0x02 在进入图形界面之后，使用组合键：Ctrl + Alt + F2，进入命令界面</strong><br><img src="/images/b8ae9a1bbf1692666f30446dcb0100b5/11.jpg"></p>
+<p>账户：chronos<br>密码：编译时使用.&#x2F;set_shared_user_password.sh设置的密码</p>
+<p><strong>0x03 登录系统之后，使用如下命令将系统从U盘安装到运行机的硬盘上</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$sudo</span> /usr/sbin/chromeos-install --dst /dev/mmcblk1</span><br></pre></td></tr></table></figure>
+
+<p>安装成功之后，提示移除U盘重启机器。拔掉U盘，重新启动机器，系统从硬盘启动，进入ChromiumOS。</p>
+<p>至此，我们已经完整的编译出了一个ChromiumOS，并且将其安装到硬盘上。</p>
+<h2 id="综上所有命令"><a href="#综上所有命令" class="headerlink" title="综上所有命令"></a>综上所有命令</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">$ (outside) <span class="built_in">mkdir</span> -p /home/chrome/chromiumos </span><br><span class="line"></span><br><span class="line">$ (outside) <span class="built_in">cd</span> /home/chrome/chromiumos </span><br><span class="line"></span><br><span class="line">$ (outside) repo init -u https://chromium.googlesource.com/chromiumos/manifest</span><br><span class="line"></span><br><span class="line">$ (outside) repo <span class="built_in">sync</span> -j4</span><br><span class="line"></span><br><span class="line">$ (outside) cros_sdk </span><br><span class="line"></span><br><span class="line">$ (inside) <span class="built_in">export</span> BOARD=amd64-generic </span><br><span class="line"></span><br><span class="line">$ (inside) setup_board --board=<span class="variable">$&#123;BOARD&#125;</span> </span><br><span class="line"></span><br><span class="line">$ (inside) cros_workon --board=<span class="variable">$&#123;BOARD&#125;</span> start chromeos-base/chromiumos-assets </span><br><span class="line"></span><br><span class="line">$ (inside) ./set_shared_user_password.sh </span><br><span class="line"></span><br><span class="line">$ (inside) ./build_packages --board=<span class="variable">$&#123;BOARD&#125;</span> </span><br><span class="line"></span><br><span class="line">$ (inside) ./build_image --board=<span class="variable">$&#123;BOARD&#125;</span> --noenable_rootfs_verification </span><br></pre></td></tr></table></figure>
+
+<h2 id="参考资料："><a href="#参考资料：" class="headerlink" title="参考资料："></a>参考资料：</h2><p>1.<a target="_blank" rel="noopener" href="https://baike.baidu.com/item/Chromium%20OS/7569945?fr=ge_ala">https://baike.baidu.com/item/Chromium%20OS/7569945?fr=ge_ala</a><br>2.<a target="_blank" rel="noopener" href="https://chromium.googlesource.com/chromiumos/docs/+/HEAD/developer_guide.md">https://chromium.googlesource.com/chromiumos/docs/+/HEAD/developer_guide.md</a><br>3.<a target="_blank" rel="noopener" href="https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up">https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up</a><br>4.<a target="_blank" rel="noopener" href="https://chromium.googlesource.com/chromiumos/docs/+/HEAD/tips-and-tricks.md#How-to-make-sudo-a-little-more-permissive">https://chromium.googlesource.com/chromiumos/docs/+/HEAD/tips-and-tricks.md#How-to-make-sudo-a-little-more-permissive</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/ChromiumOS/" rel="tag"># ChromiumOS</a>
+              <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag"># 操作系统</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/posts/0af9c6f8e8d678cc1ae542e0eee1e9d2.html" rel="prev" title="云风版协程库源代码分析">
+      <i class="fa fa-chevron-left"></i> 云风版协程库源代码分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/posts/6f873326a47848b2b3cc51063fdb5489.html" rel="next" title="Windows11以管理员身份运行cmd">
+      Windows11以管理员身份运行cmd <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#ChromiumOS%E7%9A%84%E7%9B%B8%E5%85%B3%E8%B5%84%E6%BA%90"><span class="nav-number">1.</span> <span class="nav-text">ChromiumOS的相关资源</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%96%E8%AF%91ChromiumOS"><span class="nav-number">2.</span> <span class="nav-text">编译ChromiumOS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9B%B4%E6%8D%A2%E5%BC%80%E6%9C%BA%E5%8A%A8%E7%94%BB"><span class="nav-number">3.</span> <span class="nav-text">更换开机动画</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%86%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E4%BB%8EUSB%E5%AE%89%E8%A3%85%E5%88%B0%E8%BF%90%E8%A1%8C%E6%9C%BA%E7%9A%84%E7%A1%AC%E7%9B%98%E4%B8%8A"><span class="nav-number">4.</span> <span class="nav-text">将系统安装从USB安装到运行机的硬盘上</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%BC%E4%B8%8A%E6%89%80%E6%9C%89%E5%91%BD%E4%BB%A4"><span class="nav-number">5.</span> <span class="nav-text">综上所有命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99%EF%BC%9A"><span class="nav-number">6.</span> <span class="nav-text">参考资料：</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PagePaper"
+      src="/assets/logo/header.jpeg">
+  <p class="site-author-name" itemprop="name">PagePaper</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">27</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">35</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/weimake" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;weimake" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:pagepaper@126.com" title="E-Mail → mailto:pagepaper@126.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/motadou" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;motadou" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://plus.google.com/pagepaper" title="Google → https:&#x2F;&#x2F;plus.google.com&#x2F;pagepaper" rel="noopener" target="_blank"><i class="fa fa-fw fa-google"></i>Google</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PagePaper</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
