@@ -1,7 +1,7 @@
 ---
 title: Debian以命令行界面启动
-date: 2023-10-29 17:43:34
-updated: 2023-10-29 17:43:34
+date: 2022-1-29 17:43:34
+updated: 2022-1-29 17:43:34
 categories : 
   - [Debian]
 tags: [Debian,操作系统]
